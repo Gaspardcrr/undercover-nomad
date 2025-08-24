@@ -2,95 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* UndercoveR Game Design System - Dark Theme */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Game Background - Deep Dark */
+    --background: 216 25% 6%;
+    --foreground: 0 0% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card System */
+    --card: 216 25% 8%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* Game Primary - Electric Blue */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 217 91% 70%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Game Secondary - Deep Purple */
+    --secondary: 270 50% 15%;
+    --secondary-foreground: 0 0% 95%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Gold for victories */
+    --accent: 45 93% 58%;
+    --accent-foreground: 216 25% 6%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Player Card Colors */
+    --player-1: 0 84% 60%;      /* Red */
+    --player-2: 25 95% 53%;     /* Orange */
+    --player-3: 60 100% 50%;    /* Yellow */
+    --player-4: 120 100% 40%;   /* Green */
+    --player-5: 195 100% 50%;   /* Cyan */
+    --player-6: 217 91% 60%;    /* Blue */
+    --player-7: 270 91% 65%;    /* Purple */
+    --player-8: 300 84% 60%;    /* Pink */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Role Colors */
+    --civil: 217 91% 60%;       /* Blue */
+    --undercover: 0 84% 60%;    /* Red */
+    --mister-white: 270 91% 65%; /* Purple */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* UI Elements */
+    --muted: 216 25% 12%;
+    --muted-foreground: 0 0% 65%;
+    --border: 216 25% 15%;
+    --input: 216 25% 12%;
+    --ring: 217 91% 60%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-victory: linear-gradient(135deg, hsl(var(--accent)), hsl(45 93% 68%));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(216 25% 10%));
 
-    --radius: 0.5rem;
+    /* Shadows */
+    --shadow-glow: 0 0 30px hsl(var(--primary) / 0.3);
+    --shadow-card: 0 8px 32px hsl(216 25% 2% / 0.8);
+    --shadow-victory: 0 0 50px hsl(var(--accent) / 0.6);
 
-    --sidebar-background: 0 0% 98%;
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Radius */
+    --radius: 1rem;
+    --radius-card: 1.5rem;
   }
 }
 
@@ -100,6 +75,75 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    background-image: 
+      radial-gradient(circle at 20% 80%, hsl(217 91% 60% / 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(270 91% 65% / 0.05) 0%, transparent 50%);
+  }
+
+  /* Game Card Animations */
+  .card-flip {
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-flip.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .card-face {
+    backface-visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .card-back {
+    transform: rotateY(180deg);
+  }
+
+  /* Victory Animation */
+  @keyframes confetti {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  .confetti {
+    animation: confetti 3s ease-out infinite;
+  }
+
+  /* Pulse Effect for Active Cards */
+  .card-pulse {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    from { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
+    to { box-shadow: 0 0 40px hsl(var(--primary) / 0.6), 0 0 60px hsl(var(--primary) / 0.3); }
+  }
+
+  /* Button Hover Effects */
+  .btn-glow:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+
+  /* Player Card Colors */
+  .player-card-1 { background: linear-gradient(145deg, hsl(var(--player-1) / 0.2), hsl(var(--player-1) / 0.1)); border-color: hsl(var(--player-1)); }
+  .player-card-2 { background: linear-gradient(145deg, hsl(var(--player-2) / 0.2), hsl(var(--player-2) / 0.1)); border-color: hsl(var(--player-2)); }
+  .player-card-3 { background: linear-gradient(145deg, hsl(var(--player-3) / 0.2), hsl(var(--player-3) / 0.1)); border-color: hsl(var(--player-3)); }
+  .player-card-4 { background: linear-gradient(145deg, hsl(var(--player-4) / 0.2), hsl(var(--player-4) / 0.1)); border-color: hsl(var(--player-4)); }
+  .player-card-5 { background: linear-gradient(145deg, hsl(var(--player-5) / 0.2), hsl(var(--player-5) / 0.1)); border-color: hsl(var(--player-5)); }
+  .player-card-6 { background: linear-gradient(145deg, hsl(var(--player-6) / 0.2), hsl(var(--player-6) / 0.1)); border-color: hsl(var(--player-6)); }
+  .player-card-7 { background: linear-gradient(145deg, hsl(var(--player-7) / 0.2), hsl(var(--player-7) / 0.1)); border-color: hsl(var(--player-7)); }
+  .player-card-8 { background: linear-gradient(145deg, hsl(var(--player-8) / 0.2), hsl(var(--player-8) / 0.1)); border-color: hsl(var(--player-8)); }
+
+  /* Eliminated Cards */
+  .player-eliminated {
+    opacity: 0.4;
+    filter: grayscale(100%);
+    transform: scale(0.95);
   }
 }
