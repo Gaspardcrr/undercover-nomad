@@ -54,18 +54,21 @@ export function useGame() {
     });
   }, []);
 
-  const revealPlayerWord = useCallback((player: Player) => {
+  const revealPlayerWord = useCallback(() => {
     setGameState(prev => {
+      const currentPlayer = prev.players[prev.currentPlayerIndex];
       const updatedPlayers = prev.players.map(p => 
-        p.id === player.id ? { ...p, hasSeenWord: true } : p
+        p.id === currentPlayer.id ? { ...p, hasSeenWord: true } : p
       );
 
-      // Check if all players have seen their word
-      const allSeen = updatedPlayers.every(p => p.hasSeenWord || p.isEliminated);
+      // Move to next player
+      const nextPlayerIndex = prev.currentPlayerIndex + 1;
+      const allSeen = nextPlayerIndex >= prev.players.length;
       
       return {
         ...prev,
         players: updatedPlayers,
+        currentPlayerIndex: nextPlayerIndex,
         phase: allSeen ? 'playing' : 'word-distribution',
       };
     });

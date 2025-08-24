@@ -24,9 +24,9 @@ export function UndercoverGame() {
   const [showMisterWhiteGuess, setShowMisterWhiteGuess] = useState(false);
   const [misterWhitePlayer, setMisterWhitePlayer] = useState<Player | null>(null);
 
-  const handlePlayerCardClick = (player: Player) => {
-    if (gameState.phase === 'word-distribution' && !player.hasSeenWord && !player.isEliminated) {
-      revealPlayerWord(player);
+  const handlePlayerCardClick = () => {
+    if (gameState.phase === 'word-distribution') {
+      revealPlayerWord();
     }
   };
 
