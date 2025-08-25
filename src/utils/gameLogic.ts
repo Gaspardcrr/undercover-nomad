@@ -34,6 +34,16 @@ export function generatePlayerRoles(
   
   // Fill remaining slots with civilians
   const remainingSlots = playerCount - roles.length;
+  
+  // CRITICAL RULE: At least 50% must be civilians
+  const nonCivilCount = roles.length;
+  const minCivilsRequired = Math.ceil(playerCount / 2);
+  const actualCivils = remainingSlots;
+  
+  if (actualCivils < minCivilsRequired) {
+    throw new Error(`Invalid configuration: Need at least ${minCivilsRequired} civilians for ${playerCount} players, but only ${actualCivils} would be civilians.`);
+  }
+  
   for (let i = 0; i < remainingSlots; i++) {
     roles.push('civil');
   }

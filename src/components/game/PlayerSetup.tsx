@@ -28,7 +28,11 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
       setPlayerNames(newNames);
       
       // Adjust undercover count if needed
-      const maxUndercovers = Math.floor(newNames.filter(name => name.trim()).length / 2) - (hasMisterWhite ? 1 : 0);
+      const activePlayers = newNames.filter(name => name.trim()).length;
+      const minCivilsRequired = Math.ceil(activePlayers / 2);
+      const maxNonCivils = activePlayers - minCivilsRequired;
+      const misterWhiteSlots = hasMisterWhite ? 1 : 0;
+      const maxUndercovers = Math.max(1, maxNonCivils - misterWhiteSlots);
       if (undercoverCount > maxUndercovers) {
         setUndercoverCount(Math.max(1, maxUndercovers));
       }
@@ -43,12 +47,22 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
 
   const getMaxUndercovers = () => {
     const activePlayers = playerNames.filter(name => name.trim()).length;
-    return Math.max(1, Math.floor(activePlayers / 2) - (hasMisterWhite ? 1 : 0));
+    const minCivilsRequired = Math.ceil(activePlayers / 2);
+    const maxNonCivils = activePlayers - minCivilsRequired;
+    const misterWhiteSlots = hasMisterWhite ? 1 : 0;
+    return Math.max(1, maxNonCivils - misterWhiteSlots);
   };
 
   const canStartGame = () => {
     const validNames = playerNames.filter(name => name.trim()).length;
-    return validNames >= 3 && undercoverCount >= 1;
+    if (validNames < 3) return false;
+    
+    // Check if configuration respects 50% civilian rule
+    const minCivilsRequired = Math.ceil(validNames / 2);
+    const nonCivilCount = undercoverCount + (hasMisterWhite ? 1 : 0);
+    const actualCivils = validNames - nonCivilCount;
+    
+    return actualCivils >= minCivilsRequired && undercoverCount >= 1;
   };
 
   const handleStartGame = () => {
@@ -153,22 +167,41 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
           {/* Game Summary */}
           <div className="bg-muted/30 rounded-lg p-4 space-y-2">
             <div className="font-semibold text-center">Résumé de la partie</div>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div className="text-center">
-                <div className="text-civil font-semibold">
-                  {playerNames.filter(name => name.trim()).length - undercoverCount - (hasMisterWhite ? 1 : 0)}
-                </div>
-                <div>Civils</div>
-              </div>
-              <div className="text-center">
-                <div className="text-undercover font-semibold">{undercoverCount}</div>
-                <div>Undercover</div>
-              </div>
-              <div className="text-center">
-                <div className="text-mister-white font-semibold">{hasMisterWhite ? 1 : 0}</div>
-                <div>Mister White</div>
-              </div>
-            </div>
+            {(() => {
+              const validPlayerCount = playerNames.filter(name => name.trim()).length;
+              const civilCount = validPlayerCount - undercoverCount - (hasMisterWhite ? 1 : 0);
+              const minCivilsRequired = Math.ceil(validPlayerCount / 2);
+              const isValidConfig = civilCount >= minCivilsRequired;
+              
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className={cn(
+                        "font-semibold",
+                        isValidConfig ? "text-civil" : "text-destructive"
+                      )}>
+                        {civilCount}
+                      </div>
+                      <div>Civils</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-undercover font-semibold">{undercoverCount}</div>
+                      <div>Undercover</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-mister-white font-semibold">{hasMisterWhite ? 1 : 0}</div>
+                      <div>Mister White</div>
+                    </div>
+                  </div>
+                  {!isValidConfig && (
+                    <div className="text-destructive text-sm text-center">
+                      ⚠️ Au moins {minCivilsRequired} civils requis
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           {/* Start Game Button */}

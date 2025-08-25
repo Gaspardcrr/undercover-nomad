@@ -45,7 +45,8 @@ export function GameBoard({
   const getPhaseDescription = () => {
     switch (phase) {
       case 'word-distribution':
-        return 'Chaque joueur clique sur sa carte pour voir son mot';
+        const currentPlayer = players[gameState.currentPlayerIndex];
+        return currentPlayer ? `${currentPlayer.name}, cliquez sur votre carte pour voir votre mot` : 'Révélation des mots en cours...';
       case 'playing':
         return 'Discussion libre - Trouvez les intrus !';
       case 'voting':
@@ -71,8 +72,8 @@ export function GameBoard({
         </CardHeader>
       </Card>
 
-      {/* Game Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Game Stats - Only show round and total players during game */}
+      <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
         <Card className="shadow-card">
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-primary">{roundNumber}</div>
@@ -82,22 +83,8 @@ export function GameBoard({
         
         <Card className="shadow-card">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-civil">{aliveByRole.civil}</div>
-            <div className="text-sm text-muted-foreground">Civils</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-card">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-undercover">{aliveByRole.undercover}</div>
-            <div className="text-sm text-muted-foreground">Undercover</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-card">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-mister-white">{aliveByRole.misterWhite}</div>
-            <div className="text-sm text-muted-foreground">Mister White</div>
+            <div className="text-2xl font-bold text-primary">{alivePlayers.length}</div>
+            <div className="text-sm text-muted-foreground">Joueurs restants</div>
           </CardContent>
         </Card>
       </div>
@@ -127,7 +114,7 @@ export function GameBoard({
             player={player}
             onClick={() => onPlayerCardClick(player)}
             showWord={phase === 'word-distribution' && player.hasSeenWord}
-            isActive={phase === 'word-distribution' && !player.hasSeenWord && !player.isEliminated}
+            isActive={phase === 'word-distribution' && gameState.currentPlayerIndex === players.indexOf(player) && !player.hasSeenWord}
             canEliminate={showEliminationMode}
             onEliminate={() => onEliminatePlayer(player)}
           />

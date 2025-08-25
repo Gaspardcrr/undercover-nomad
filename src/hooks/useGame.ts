@@ -30,42 +30,60 @@ export function useGame() {
     undercoverCount: number, 
     hasMisterWhite: boolean
   ) => {
-    const usedWordPairs = getUsedWordPairs();
-    const { players, wordPair } = createPlayersWithRoles(
-      playerNames, 
-      undercoverCount, 
-      hasMisterWhite, 
-      usedWordPairs
-    );
+    try {
+      const usedWordPairs = getUsedWordPairs();
+      const { players, wordPair } = createPlayersWithRoles(
+        playerNames, 
+        undercoverCount, 
+        hasMisterWhite, 
+        usedWordPairs
+      );
 
-    setGameState({
-      phase: 'word-distribution',
-      players,
-      currentPlayerIndex: 0,
-      civilianWord: wordPair.civilian,
-      undercoverWord: wordPair.undercover,
-      roundNumber: 1,
-      gameSettings: {
-        minPlayers: 3,
-        maxPlayers: 12,
-        undercoverCount,
-        hasMisterWhite,
-      },
-    });
+      setGameState({
+        phase: 'word-distribution',
+        players,
+        currentPlayerIndex: 0,
+        civilianWord: wordPair.civilian,
+        undercoverWord: wordPair.undercover,
+        roundNumber: 1,
+        gameSettings: {
+          minPlayers: 3,
+          maxPlayers: 12,
+          undercoverCount,
+          hasMisterWhite,
+        },
+      });
+    } catch (error) {
+      // Handle validation error from generatePlayerRoles
+      alert((error as Error).message);
+    }
   }, []);
 
   const revealPlayerWord = useCallback((player: Player) => {
     setGameState(prev => {
+      // Only allow the current player to reveal their word
+      const currentPlayer = prev.players[prev.currentPlayerIndex];
+      if (player.id !== currentPlayer.id) {
+        return prev; // Ignore clicks on other players' cards
+      }
+
       const updatedPlayers = prev.players.map(p => 
         p.id === player.id ? { ...p, hasSeenWord: true } : p
       );
 
+      // Find next player who hasn't seen their word
+      let nextIndex = prev.currentPlayerIndex;
+      do {
+        nextIndex = (nextIndex + 1) % prev.players.length;
+      } while (nextIndex !== prev.currentPlayerIndex && updatedPlayers[nextIndex].hasSeenWord);
+
       // Check if all players have seen their word
-      const allSeen = updatedPlayers.every(p => p.hasSeenWord || p.isEliminated);
+      const allSeen = updatedPlayers.every(p => p.hasSeenWord);
       
       return {
         ...prev,
         players: updatedPlayers,
+        currentPlayerIndex: allSeen ? 0 : nextIndex,
         phase: allSeen ? 'playing' : 'word-distribution',
       };
     });
