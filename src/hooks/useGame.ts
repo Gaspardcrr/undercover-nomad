@@ -61,30 +61,58 @@ export function useGame() {
 
   const revealPlayerWord = useCallback((player: Player) => {
     setGameState(prev => {
-      // Only allow the current player to reveal their word
+      // Only allow the current player to interact with their card
       const currentPlayer = prev.players[prev.currentPlayerIndex];
       if (player.id !== currentPlayer.id) {
         return prev; // Ignore clicks on other players' cards
       }
 
-      const updatedPlayers = prev.players.map(p => 
-        p.id === player.id ? { ...p, hasSeenWord: true } : p
-      );
+      const updatedPlayers = prev.players.map(p => {
+        if (p.id === player.id) {
+          if (!p.hasSeenWord) {
+            // First click: reveal the word
+            return { ...p, hasSeenWord: true };
+          } else {
+            // Second click: card is "flipped back", move to next player
+            return p;
+          }
+        }
+        return p;
+      });
 
-      // Find next player who hasn't seen their word
-      let nextIndex = prev.currentPlayerIndex;
-      do {
-        nextIndex = (nextIndex + 1) % prev.players.length;
-      } while (nextIndex !== prev.currentPlayerIndex && updatedPlayers[nextIndex].hasSeenWord);
+      // If player clicked to flip back their card, move to next player
+      if (currentPlayer.hasSeenWord) {
+        // Find next player who hasn't seen their word
+        let nextIndex = (prev.currentPlayerIndex + 1) % prev.players.length;
+        while (nextIndex !== prev.currentPlayerIndex && updatedPlayers[nextIndex].hasSeenWord) {
+          nextIndex = (nextIndex + 1) % prev.players.length;
+        }
 
-      // Check if all players have seen their word
-      const allSeen = updatedPlayers.every(p => p.hasSeenWord);
-      
+        // Check if all players have seen their word
+        const allSeen = updatedPlayers.every(p => p.hasSeenWord);
+        
+        if (allSeen) {
+          // Start the game automatically after a short delay
+          setTimeout(() => {
+            setGameState(current => ({
+              ...current,
+              phase: 'playing'
+            }));
+          }, 2000);
+        }
+        
+        return {
+          ...prev,
+          players: updatedPlayers,
+          currentPlayerIndex: allSeen ? prev.currentPlayerIndex : nextIndex,
+          phase: prev.phase, // Keep in word-distribution until auto-transition
+        };
+      }
+
+      // First click: just reveal the word, don't change current player yet
       return {
         ...prev,
         players: updatedPlayers,
-        currentPlayerIndex: allSeen ? 0 : nextIndex,
-        phase: allSeen ? 'playing' : 'word-distribution',
       };
     });
   }, []);

@@ -25,20 +25,45 @@ export function GameCard({
     if (showWord) {
       if (player.role === 'mister-white') {
         return (
-          <div className="text-center">
-            <div className="text-lg font-bold text-mister-white mb-2">
-              🎭 Mister White
+          <div className="text-center space-y-4">
+            <div className="text-3xl">🎭</div>
+            <div className="text-xl font-bold text-mister-white">
+              Mister White
             </div>
             <div className="text-sm text-muted-foreground">
-              Vous devez deviner le mot !
+              Vous n'avez pas de mot !<br/>
+              Devinez le mot des autres joueurs
+            </div>
+            <div className="text-xs text-accent mt-4">
+              👆 Cliquez pour retourner la carte
             </div>
           </div>
         );
       }
       return (
-        <div className="text-center">
-          <div className="text-2xl font-bold mb-2">
+        <div className="text-center space-y-4">
+          <div className="text-3xl font-bold text-primary">
             {player.word}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Votre mot secret
+          </div>
+          <div className="text-xs text-accent mt-4">
+            👆 Cliquez pour retourner la carte
+          </div>
+        </div>
+      );
+    }
+
+    if (isActive) {
+      return (
+        <div className="text-center space-y-4">
+          <div className="text-4xl">🎴</div>
+          <div className="text-lg font-semibold">
+            {player.name}
+          </div>
+          <div className="text-sm text-accent animate-pulse">
+            👆 Cliquez pour révéler votre carte
           </div>
         </div>
       );
@@ -61,14 +86,15 @@ export function GameCard({
       <Card 
         className={cn(
           `player-card-${player.colorIndex}`,
-          "border-2 shadow-card transition-all duration-300 cursor-pointer hover:shadow-glow hover:scale-105",
-          isActive && "card-pulse",
+          "border-2 shadow-card transition-all duration-500 cursor-pointer min-h-[140px] flex items-center justify-center",
+          isActive && "card-pulse border-accent shadow-glow hover:scale-105",
+          showWord && "bg-gradient-card border-primary shadow-glow",
           player.isEliminated && "player-eliminated",
-          "min-h-[120px] flex items-center justify-center"
+          !isActive && !showWord && "hover:shadow-md hover:scale-102"
         )}
         onClick={onClick}
       >
-        <CardContent className="p-6">
+        <CardContent className="p-6 w-full">
           {getCardContent()}
         </CardContent>
 
