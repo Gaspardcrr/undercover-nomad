@@ -67,52 +67,38 @@ export function useGame() {
         return prev; // Ignore clicks on other players' cards
       }
 
+      // Mark current player as having seen their word
       const updatedPlayers = prev.players.map(p => {
         if (p.id === player.id) {
-          if (!p.hasSeenWord) {
-            // First click: reveal the word
-            return { ...p, hasSeenWord: true };
-          } else {
-            // Second click: card is "flipped back", move to next player
-            return p;
-          }
+          return { ...p, hasSeenWord: true };
         }
         return p;
       });
 
-      // If player clicked to flip back their card, move to next player
-      if (currentPlayer.hasSeenWord) {
-        // Find next player who hasn't seen their word
-        let nextIndex = (prev.currentPlayerIndex + 1) % prev.players.length;
-        while (nextIndex !== prev.currentPlayerIndex && updatedPlayers[nextIndex].hasSeenWord) {
-          nextIndex = (nextIndex + 1) % prev.players.length;
-        }
-
-        // Check if all players have seen their word
-        const allSeen = updatedPlayers.every(p => p.hasSeenWord);
-        
-        if (allSeen) {
-          // Start the game automatically after a short delay
-          setTimeout(() => {
-            setGameState(current => ({
-              ...current,
-              phase: 'playing'
-            }));
-          }, 2000);
-        }
-        
-        return {
-          ...prev,
-          players: updatedPlayers,
-          currentPlayerIndex: allSeen ? prev.currentPlayerIndex : nextIndex,
-          phase: prev.phase, // Keep in word-distribution until auto-transition
-        };
+      // Find next player who hasn't seen their word
+      let nextIndex = (prev.currentPlayerIndex + 1) % prev.players.length;
+      while (nextIndex !== prev.currentPlayerIndex && updatedPlayers[nextIndex].hasSeenWord) {
+        nextIndex = (nextIndex + 1) % prev.players.length;
       }
 
-      // First click: just reveal the word, don't change current player yet
+      // Check if all players have seen their word
+      const allSeen = updatedPlayers.every(p => p.hasSeenWord);
+      
+      if (allSeen) {
+        // Start the game automatically after a short delay
+        setTimeout(() => {
+          setGameState(current => ({
+            ...current,
+            phase: 'playing'
+          }));
+        }, 3000);
+      }
+      
       return {
         ...prev,
         players: updatedPlayers,
+        currentPlayerIndex: allSeen ? prev.currentPlayerIndex : nextIndex,
+        phase: prev.phase, // Keep in word-distribution until auto-transition
       };
     });
   }, []);

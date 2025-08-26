@@ -21,54 +21,57 @@ export function GameCard({
   canEliminate = false,
   onEliminate 
 }: GameCardProps) {
-  const getCardContent = () => {
-    if (showWord) {
-      if (player.role === 'mister-white') {
-        return (
-          <div className="text-center space-y-4">
-            <div className="text-3xl">🎭</div>
-            <div className="text-xl font-bold text-mister-white">
-              Mister White
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Vous n'avez pas de mot !<br/>
-              Devinez le mot des autres joueurs
-            </div>
-            <div className="text-xs text-accent mt-4">
-              👆 Cliquez pour retourner la carte
-            </div>
-          </div>
-        );
-      }
+  const [isFlipped, setIsFlipped] = React.useState(false);
+
+  const getCardFrontContent = () => {
+    return (
+      <div className="text-center space-y-4">
+        <div className="text-4xl">🎴</div>
+        <div className="text-lg font-semibold">
+          {player.name}
+        </div>
+        <div className="text-sm text-accent animate-pulse">
+          👆 Cliquez pour révéler votre carte secrète
+        </div>
+      </div>
+    );
+  };
+
+  const getCardBackContent = () => {
+    if (player.role === 'mister-white') {
       return (
         <div className="text-center space-y-4">
-          <div className="text-3xl font-bold text-primary">
-            {player.word}
+          <div className="text-6xl">❓</div>
+          <div className="text-xl font-bold text-mister-white">
+            ???
           </div>
           <div className="text-sm text-muted-foreground">
-            Votre mot secret
+            Vous êtes Mister White !<br/>
+            Écoutez et devinez le mot
           </div>
           <div className="text-xs text-accent mt-4">
-            👆 Cliquez pour retourner la carte
+            👆 Cliquez pour confirmer et passer au suivant
           </div>
         </div>
       );
     }
-
-    if (isActive) {
-      return (
-        <div className="text-center space-y-4">
-          <div className="text-4xl">🎴</div>
-          <div className="text-lg font-semibold">
-            {player.name}
-          </div>
-          <div className="text-sm text-accent animate-pulse">
-            👆 Cliquez pour révéler votre carte
-          </div>
+    
+    return (
+      <div className="text-center space-y-4">
+        <div className="text-4xl font-bold text-primary mb-4">
+          {player.word}
         </div>
-      );
-    }
+        <div className="text-sm text-muted-foreground">
+          Votre mot secret
+        </div>
+        <div className="text-xs text-accent mt-4">
+          👆 Cliquez pour confirmer et passer au suivant
+        </div>
+      </div>
+    );
+  };
 
+  const getGameModeContent = () => {
     return (
       <div className="text-center">
         <div className="text-lg font-semibold mb-2">
@@ -81,21 +84,61 @@ export function GameCard({
     );
   };
 
+  const handleCardClick = () => {
+    if (isActive && !player.hasSeenWord) {
+      // First click: flip to reveal
+      setIsFlipped(true);
+    } else if (isActive && showWord && !isFlipped) {
+      // Card is already revealed, this is the "confirm" click
+      onClick?.();
+      setIsFlipped(false);
+    } else if (isActive && isFlipped) {
+      // Second click: confirm and move to next player
+      onClick?.();
+      setIsFlipped(false);
+    } else {
+      // Regular game mode click
+      onClick?.();
+    }
+  };
+
+  // Reset flip state when player changes
+  React.useEffect(() => {
+    if (!isActive) {
+      setIsFlipped(false);
+    }
+  }, [isActive]);
+
+  const getDisplayContent = () => {
+    // During word distribution phase
+    if (isActive) {
+      if (isFlipped || showWord) {
+        return getCardBackContent();
+      } else {
+        return getCardFrontContent();
+      }
+    }
+    
+    // During game mode
+    return getGameModeContent();
+  };
+
   return (
     <div className="relative">
       <Card 
         className={cn(
           `player-card-${player.colorIndex}`,
-          "border-2 shadow-card transition-all duration-500 cursor-pointer min-h-[140px] flex items-center justify-center",
+          "border-2 shadow-card transition-all duration-500 cursor-pointer min-h-[180px] flex items-center justify-center",
           isActive && "card-pulse border-accent shadow-glow hover:scale-105",
-          showWord && "bg-gradient-card border-primary shadow-glow",
+          (isFlipped || showWord) && isActive && "bg-gradient-card border-primary shadow-glow",
           player.isEliminated && "player-eliminated",
-          !isActive && !showWord && "hover:shadow-md hover:scale-102"
+          !isActive && "hover:shadow-md hover:scale-102",
+          isActive && "transform-gpu" // GPU acceleration for flip animation
         )}
-        onClick={onClick}
+        onClick={handleCardClick}
       >
         <CardContent className="p-6 w-full">
-          {getCardContent()}
+          {getDisplayContent()}
         </CardContent>
 
         {/* Elimination Button */}

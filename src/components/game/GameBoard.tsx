@@ -178,14 +178,16 @@ export function GameBoard({
                           <div className="text-lg font-semibold">
                             👆 {currentPlayer.name}, cliquez sur votre carte ci-dessous
                           </div>
-                          <GameCard
-                            key={currentPlayer.id}
-                            player={currentPlayer}
-                            onClick={() => onPlayerCardClick(currentPlayer)}
-                            showWord={currentPlayer.hasSeenWord}
-                            isActive={true}
-                            canEliminate={false}
-                          />
+                          <div className="max-w-md mx-auto">
+                            <GameCard
+                              key={currentPlayer.id}
+                              player={currentPlayer}
+                              onClick={() => onPlayerCardClick(currentPlayer)}
+                              showWord={currentPlayer.hasSeenWord}
+                              isActive={true}
+                              canEliminate={false}
+                            />
+                          </div>
                           <div className="text-sm text-muted-foreground">
                             Regardez votre carte secrètement, puis cliquez à nouveau pour la retourner
                           </div>
