@@ -85,15 +85,11 @@ export function GameCard({
   };
 
   const handleCardClick = () => {
-    if (isActive && !player.hasSeenWord) {
+    if (isActive && !isFlipped && !player.hasSeenWord) {
       // First click: flip to reveal
       setIsFlipped(true);
-    } else if (isActive && showWord && !isFlipped) {
-      // Card is already revealed, this is the "confirm" click
-      onClick?.();
-      setIsFlipped(false);
-    } else if (isActive && isFlipped) {
-      // Second click: confirm and move to next player
+    } else if (isActive && (isFlipped || showWord)) {
+      // Second click on revealed card: confirm and move to next player
       onClick?.();
       setIsFlipped(false);
     } else {
@@ -112,7 +108,7 @@ export function GameCard({
   const getDisplayContent = () => {
     // During word distribution phase
     if (isActive) {
-      if (isFlipped || showWord) {
+      if (isFlipped || (showWord && player.hasSeenWord)) {
         return getCardBackContent();
       } else {
         return getCardFrontContent();
@@ -130,7 +126,7 @@ export function GameCard({
           `player-card-${player.colorIndex}`,
           "border-2 shadow-card transition-all duration-500 cursor-pointer min-h-[180px] flex items-center justify-center",
           isActive && "card-pulse border-accent shadow-glow hover:scale-105",
-          (isFlipped || showWord) && isActive && "bg-gradient-card border-primary shadow-glow",
+          (isFlipped || (showWord && player.hasSeenWord)) && isActive && "bg-gradient-card border-primary shadow-glow",
           player.isEliminated && "player-eliminated",
           !isActive && "hover:shadow-md hover:scale-102",
           isActive && "transform-gpu" // GPU acceleration for flip animation
