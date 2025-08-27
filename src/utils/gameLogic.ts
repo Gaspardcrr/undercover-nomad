@@ -128,10 +128,6 @@ export function updateScores(
   misterWhiteGuessWin = false
 ): Player[] {
   return players.map(player => {
-    if (player.isEliminated) {
-      return player; // No points for eliminated players
-    }
-
     let pointsToAdd = 0;
 
     if (winner === 'civil' && player.role === 'civil') {
@@ -139,7 +135,13 @@ export function updateScores(
     } else if (winner === 'undercover' && (player.role === 'undercover' || player.role === 'mister-white')) {
       pointsToAdd = SCORES.UNDERCOVER_WIN;
     } else if (winner === 'mister-white' && player.role === 'mister-white') {
+      // Mister White gets points even if eliminated when guessing correctly
       pointsToAdd = misterWhiteGuessWin ? SCORES.MISTER_WHITE_GUESS : SCORES.MISTER_WHITE_WIN;
+    }
+
+    // Skip points for other eliminated players (but not Mister White when they win by guessing)
+    if (player.isEliminated && !(winner === 'mister-white' && player.role === 'mister-white' && misterWhiteGuessWin)) {
+      return player;
     }
 
     return {

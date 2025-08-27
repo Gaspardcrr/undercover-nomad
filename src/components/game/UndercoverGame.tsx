@@ -7,6 +7,7 @@ import { useGame } from '@/hooks/useGame';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 import type { Player } from '@/types/game';
 
 export function UndercoverGame() {
@@ -31,6 +32,23 @@ export function UndercoverGame() {
   };
 
   const handleEliminatePlayer = (player: Player) => {
+    // Show role announcement toast
+    const roleAnnouncement = {
+      'civil': `👤 ${player.name} était un Civil !`,
+      'undercover': `🕵️ ${player.name} était un Undercover !`,
+      'mister-white': `❓ ${player.name} était Mister White !`
+    };
+    
+    toast.success(roleAnnouncement[player.role], {
+      duration: 3000,
+      style: {
+        background: player.role === 'civil' ? '#10b981' : 
+                   player.role === 'undercover' ? '#f59e0b' : '#ef4444',
+        color: 'white',
+        fontWeight: 'bold'
+      }
+    });
+
     if (player.role === 'mister-white') {
       setMisterWhitePlayer(player);
       setShowMisterWhiteGuess(true);
@@ -134,6 +152,7 @@ export function UndercoverGame() {
       <div className="container mx-auto px-4 py-8">
         {renderGameContent()}
       </div>
+      <Toaster position="top-center" />
     </div>
   );
 }

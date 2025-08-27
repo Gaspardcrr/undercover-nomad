@@ -173,9 +173,16 @@ export function GameCard({
         {/* Eliminated overlay */}
         {player.isEliminated && (
           <div className="absolute inset-0 bg-background/80 rounded-card flex items-center justify-center">
-            <span className="text-2xl font-bold text-destructive">
-              ÉLIMINÉ
-            </span>
+            <div className="text-center space-y-2">
+              <div className="text-2xl font-bold text-destructive">
+                ÉLIMINÉ
+              </div>
+              <div className="text-sm font-semibold text-foreground">
+                {player.role === 'civil' && '👤 Civil'}
+                {player.role === 'undercover' && '🕵️ Undercover'}
+                {player.role === 'mister-white' && '❓ Mister White'}
+              </div>
+            </div>
           </div>
         )}
       </Card>
