@@ -3,6 +3,7 @@
 import type { Player, Role, GameState, WordPair } from '@/types/game';
 import { getRandomWordPair } from '@/data/wordPairs';
 import { SCORES } from '@/types/game';
+import type { PlayerConfig } from '@/types/playerConfig';
 
 // Shuffle array utility
 export function shuffleArray<T>(array: T[]): T[] {
@@ -12,6 +13,45 @@ export function shuffleArray<T>(array: T[]): T[] {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+// Auto-adjust game configuration to respect rules
+export function autoAdjustGameConfig(
+  playerCount: number,
+  requestedUndercoverCount: number,
+  hasMisterWhite: boolean
+): { undercoverCount: number, hasMisterWhite: boolean } {
+  if (playerCount < 3) {
+    return { undercoverCount: 1, hasMisterWhite: false };
+  }
+
+  let finalUndercoverCount = requestedUndercoverCount;
+  let finalHasMisterWhite = hasMisterWhite;
+
+  if (hasMisterWhite) {
+    // With Mister White: civilians >= 50%
+    const minCivilsRequired = Math.ceil(playerCount / 2);
+    const maxNonCivils = playerCount - minCivilsRequired;
+    const maxUndercoverWithMisterWhite = Math.max(1, maxNonCivils - 1);
+    
+    if (finalUndercoverCount > maxUndercoverWithMisterWhite) {
+      finalUndercoverCount = maxUndercoverWithMisterWhite;
+    }
+  } else {
+    // Without Mister White: civilians >= 50% + 1
+    const minCivilsRequired = Math.ceil(playerCount / 2) + 1;
+    const maxNonCivils = playerCount - minCivilsRequired;
+    const maxUndercoverWithoutMisterWhite = Math.max(1, maxNonCivils);
+    
+    if (finalUndercoverCount > maxUndercoverWithoutMisterWhite) {
+      finalUndercoverCount = maxUndercoverWithoutMisterWhite;
+    }
+  }
+
+  return { 
+    undercoverCount: Math.max(1, finalUndercoverCount), 
+    hasMisterWhite: finalHasMisterWhite 
+  };
 }
 
 // Generate player roles based on game settings
@@ -35,15 +75,6 @@ export function generatePlayerRoles(
   // Fill remaining slots with civilians
   const remainingSlots = playerCount - roles.length;
   
-  // CRITICAL RULE: At least 50% must be civilians
-  const nonCivilCount = roles.length;
-  const minCivilsRequired = Math.ceil(playerCount / 2);
-  const actualCivils = remainingSlots;
-  
-  if (actualCivils < minCivilsRequired) {
-    throw new Error(`Invalid configuration: Need at least ${minCivilsRequired} civilians for ${playerCount} players, but only ${actualCivils} would be civilians.`);
-  }
-  
   for (let i = 0; i < remainingSlots; i++) {
     roles.push('civil');
   }
@@ -53,17 +84,18 @@ export function generatePlayerRoles(
 
 // Create players with assigned roles and words
 export function createPlayersWithRoles(
-  playerNames: string[],
+  playerConfigs: Array<{ name: string, profileImage?: string }>,
   undercoverCount: number,
   hasMisterWhite: boolean,
   usedWordPairs: WordPair[] = []
 ): { players: Player[], wordPair: WordPair } {
   const wordPair = getRandomWordPair(usedWordPairs);
-  const roles = generatePlayerRoles(playerNames.length, undercoverCount, hasMisterWhite);
+  const roles = generatePlayerRoles(playerConfigs.length, undercoverCount, hasMisterWhite);
   
-  const players: Player[] = playerNames.map((name, index) => ({
+  const players: Player[] = playerConfigs.map((config, index) => ({
     id: `player-${index}`,
-    name: name.slice(0, 16), // Limit to 16 characters
+    name: config.name.slice(0, 16), // Limit to 16 characters
+    profileImage: config.profileImage,
     role: roles[index],
     word: roles[index] === 'civil' ? wordPair.civilian : 
           roles[index] === 'undercover' ? wordPair.undercover : undefined,

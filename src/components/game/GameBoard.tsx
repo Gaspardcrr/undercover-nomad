@@ -11,6 +11,7 @@ interface GameBoardProps {
   onPlayerCardClick: (player: Player) => void;
   onEliminatePlayer: (player: Player) => void;
   onEndGame: () => void;
+  onAmnesicMode: (player: Player) => void;
   showEliminationMode: boolean;
 }
 
@@ -19,6 +20,7 @@ export function GameBoard({
   onPlayerCardClick, 
   onEliminatePlayer,
   onEndGame,
+  onAmnesicMode,
   showEliminationMode 
 }: GameBoardProps) {
   const { players, phase, roundNumber } = gameState;
@@ -182,10 +184,10 @@ export function GameBoard({
                             <GameCard
                               key={currentPlayer.id}
                               player={currentPlayer}
+                              isCurrentPlayer={true}
                               onClick={() => onPlayerCardClick(currentPlayer)}
-                              showWord={currentPlayer.hasSeenWord}
-                              isActive={true}
-                              canEliminate={false}
+                              showEliminateButton={false}
+                              gamePhase={phase}
                             />
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -233,11 +235,12 @@ export function GameBoard({
             <GameCard
               key={player.id}
               player={player}
+              isCurrentPlayer={false}
               onClick={() => onPlayerCardClick(player)}
-              showWord={false}
-              isActive={false}
-              canEliminate={showEliminationMode}
-              onEliminate={() => onEliminatePlayer(player)}
+              onEliminate={showEliminationMode ? () => onEliminatePlayer(player) : undefined}
+              onAmnesicMode={() => onAmnesicMode(player)}
+              showEliminateButton={showEliminationMode}
+              gamePhase={phase}
             />
           ))}
         </div>

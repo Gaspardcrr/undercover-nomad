@@ -1,122 +1,90 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { X, Brain } from 'lucide-react';
 import type { Player } from '@/types/game';
 
 interface GameCardProps {
   player: Player;
+  isCurrentPlayer: boolean;
   onClick?: () => void;
-  showWord?: boolean;
-  isActive?: boolean;
-  canEliminate?: boolean;
   onEliminate?: () => void;
+  onAmnesicMode?: () => void;
+  showEliminateButton: boolean;
+  gamePhase: 'word-distribution' | 'playing' | 'voting' | 'game-over' | 'starting-player-selection' | 'setup';
 }
 
 export function GameCard({ 
   player, 
+  isCurrentPlayer, 
   onClick, 
-  showWord = false, 
-  isActive = false,
-  canEliminate = false,
-  onEliminate 
+  onEliminate, 
+  onAmnesicMode,
+  showEliminateButton, 
+  gamePhase 
 }: GameCardProps) {
   const [isFlipped, setIsFlipped] = React.useState(false);
 
-  const getCardFrontContent = () => {
-    return (
-      <div className="text-center space-y-4">
-        <div className="text-4xl">🎴</div>
-        <div className="text-lg font-semibold">
-          {player.name}
-        </div>
-        <div className="text-sm text-accent animate-pulse">
-          👆 Cliquez pour révéler votre carte secrète
-        </div>
-      </div>
-    );
-  };
-
-  const getCardBackContent = () => {
-    if (player.role === 'mister-white') {
+  const getCardContent = () => {
+    if (gamePhase === 'word-distribution') {
+      if (player.hasSeenWord || isFlipped) {
+        return player.role === 'mister-white' ? (
+          <div className="text-center space-y-4">
+            <div className="text-6xl">❓</div>
+            <div className="text-xl font-bold text-mister-white">???</div>
+            <div className="text-sm text-muted-foreground">
+              Vous êtes Mister White !<br/>Écoutez et devinez le mot
+            </div>
+          </div>
+        ) : (
+          <div className="text-center space-y-4">
+            <div className="text-4xl font-bold text-primary">{player.word}</div>
+            <div className="text-sm text-muted-foreground">Votre mot secret</div>
+          </div>
+        );
+      }
       return (
         <div className="text-center space-y-4">
-          <div className="text-6xl">❓</div>
-          <div className="text-xl font-bold text-mister-white">
-            ???
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Vous êtes Mister White !<br/>
-            Écoutez et devinez le mot
-          </div>
-          <div className="text-xs text-accent mt-4">
-            👆 Cliquez pour confirmer et passer au suivant
+          <div className="text-4xl">🎴</div>
+          <div className="text-lg font-semibold">{player.name}</div>
+          <div className="text-sm text-accent animate-pulse">
+            👆 Cliquez pour révéler votre carte
           </div>
         </div>
       );
     }
-    
+
     return (
       <div className="text-center space-y-4">
-        <div className="text-4xl font-bold text-primary mb-4">
-          {player.word}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Votre mot secret
-        </div>
-        <div className="text-xs text-accent mt-4">
-          👆 Cliquez pour confirmer et passer au suivant
-        </div>
-      </div>
-    );
-  };
-
-  const getGameModeContent = () => {
-    return (
-      <div className="text-center">
-        <div className="text-lg font-semibold mb-2">
-          {player.name}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Score: {player.score}
+        <Avatar className="w-16 h-16 mx-auto">
+          {player.profileImage ? (
+            <AvatarImage src={player.profileImage} alt={player.name} />
+          ) : null}
+          <AvatarFallback className="text-lg font-bold bg-muted">
+            {player.name.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <div className="text-lg font-semibold">{player.name}</div>
+          <div className="text-sm text-muted-foreground">Score: {player.score}</div>
         </div>
       </div>
     );
   };
 
   const handleCardClick = () => {
-    if (isActive && !isFlipped && !player.hasSeenWord) {
-      // First click: flip to reveal
-      setIsFlipped(true);
-    } else if (isActive && (isFlipped || showWord)) {
-      // Second click on revealed card: confirm and move to next player
-      onClick?.();
-      setIsFlipped(false);
-    } else {
-      // Regular game mode click
-      onClick?.();
-    }
-  };
-
-  // Reset flip state when player changes
-  React.useEffect(() => {
-    if (!isActive) {
-      setIsFlipped(false);
-    }
-  }, [isActive]);
-
-  const getDisplayContent = () => {
-    // During word distribution phase
-    if (isActive) {
-      if (isFlipped || (showWord && player.hasSeenWord)) {
-        return getCardBackContent();
+    if (gamePhase === 'word-distribution' && isCurrentPlayer && !player.hasSeenWord) {
+      if (!isFlipped) {
+        setIsFlipped(true);
       } else {
-        return getCardFrontContent();
+        onClick?.();
+        setIsFlipped(false);
       }
+    } else {
+      onClick?.();
     }
-    
-    // During game mode
-    return getGameModeContent();
   };
 
   return (
@@ -124,60 +92,55 @@ export function GameCard({
       <Card 
         className={cn(
           `player-card-${player.colorIndex}`,
-          "border-2 shadow-card transition-all duration-500 cursor-pointer min-h-[180px] flex items-center justify-center",
-          isActive && "card-pulse border-accent shadow-glow hover:scale-105",
-          (isFlipped || (showWord && player.hasSeenWord)) && isActive && "bg-gradient-card border-primary shadow-glow",
-          player.isEliminated && "player-eliminated",
-          !isActive && "hover:shadow-md hover:scale-102",
-          isActive && "transform-gpu" // GPU acceleration for flip animation
+          "border-2 shadow-card transition-all duration-300 cursor-pointer min-h-[200px] flex items-center justify-center",
+          isCurrentPlayer && gamePhase === 'word-distribution' && "ring-2 ring-primary animate-pulse",
+          player.isEliminated && "opacity-50 grayscale"
         )}
         onClick={handleCardClick}
       >
-        <CardContent className="p-6 w-full">
-          {getDisplayContent()}
-        </CardContent>
-
-        {/* Elimination Button */}
-        {canEliminate && !player.isEliminated && (
-          <Button
-            variant="destructive"
-            size="sm"
-            className="absolute -top-2 -right-2 h-8 w-8 rounded-full p-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEliminate?.();
-            }}
-          >
-            ✕
-          </Button>
-        )}
-
-        {/* Player Avatar/Icon */}
-        <div className={cn(
-          "absolute -top-3 -left-3 w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg font-bold",
-          `border-player-${player.colorIndex} bg-card`
-        )}>
-          {player.avatar ? (
-            <img 
-              src={player.avatar} 
-              alt={player.name}
-              className="w-full h-full rounded-full object-cover" 
-            />
-          ) : (
-            <span className={`text-player-${player.colorIndex}`}>
-              {player.name.charAt(0).toUpperCase()}
-            </span>
-          )}
+        <div className="p-6 w-full">
+          {getCardContent()}
         </div>
+
+        {/* Action buttons */}
+        {!player.isEliminated && gamePhase === 'playing' && (
+          <div className="absolute top-2 right-2 flex gap-1">
+            {player.hasSeenWord && onAmnesicMode && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-8 h-8 rounded-full p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAmnesicMode();
+                }}
+                title="Mode amnésique"
+              >
+                <Brain className="w-4 h-4" />
+              </Button>
+            )}
+            {showEliminateButton && onEliminate && (
+              <Button
+                size="sm"
+                variant="destructive"
+                className="w-8 h-8 rounded-full p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEliminate();
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Eliminated overlay */}
         {player.isEliminated && (
-          <div className="absolute inset-0 bg-background/80 rounded-card flex items-center justify-center">
+          <div className="absolute inset-0 bg-background/80 rounded-lg flex items-center justify-center">
             <div className="text-center space-y-2">
-              <div className="text-2xl font-bold text-destructive">
-                ÉLIMINÉ
-              </div>
-              <div className="text-sm font-semibold text-foreground">
+              <div className="text-2xl font-bold text-destructive">ÉLIMINÉ</div>
+              <div className="text-sm font-semibold">
                 {player.role === 'civil' && '👤 Civil'}
                 {player.role === 'undercover' && '🕵️ Undercover'}
                 {player.role === 'mister-white' && '❓ Mister White'}

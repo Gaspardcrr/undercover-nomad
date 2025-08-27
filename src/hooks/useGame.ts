@@ -26,14 +26,14 @@ export function useGame() {
   });
 
   const startGame = useCallback((
-    playerNames: string[], 
+    playerConfigs: Array<{ name: string, profileImage?: string }>, 
     undercoverCount: number, 
     hasMisterWhite: boolean
   ) => {
     try {
       const usedWordPairs = getUsedWordPairs();
       const { players, wordPair } = createPlayersWithRoles(
-        playerNames, 
+        playerConfigs, 
         undercoverCount, 
         hasMisterWhite, 
         usedWordPairs
@@ -85,13 +85,13 @@ export function useGame() {
       const allSeen = updatedPlayers.every(p => p.hasSeenWord);
       
       if (allSeen) {
-        // Start the game automatically after a short delay
+        // Move to starting player selection after all words are seen
         setTimeout(() => {
           setGameState(current => ({
             ...current,
-            phase: 'playing'
+            phase: 'starting-player-selection'
           }));
-        }, 3000);
+        }, 1500);
       }
       
       return {
@@ -188,21 +188,74 @@ export function useGame() {
     });
   }, []);
 
-  const startNewRound = useCallback(() => {
+  const selectStartingPlayer = useCallback((playerIndex: number) => {
+    setGameState(prev => ({
+      ...prev,
+      phase: 'playing',
+      startingPlayerIndex: playerIndex,
+    }));
+  }, []);
+
+  const skipRound = useCallback(() => {
     setGameState(prev => {
       const usedWordPairs = getUsedWordPairs();
       const resetPlayers = resetPlayersForNewRound(prev.players);
+      const playerConfigs = resetPlayers.map(p => ({ 
+        name: p.name, 
+        profileImage: p.profileImage 
+      }));
       const { players, wordPair } = createPlayersWithRoles(
-        resetPlayers.map(p => p.name),
+        playerConfigs,
         prev.gameSettings.undercoverCount,
         prev.gameSettings.hasMisterWhite,
         usedWordPairs
       );
 
-      // Preserve scores
+      // Preserve scores and profile images
       const playersWithScores = players.map(player => {
         const existingPlayer = resetPlayers.find(p => p.name === player.name);
-        return existingPlayer ? { ...player, score: existingPlayer.score } : player;
+        return existingPlayer ? { 
+          ...player, 
+          score: existingPlayer.score,
+          profileImage: existingPlayer.profileImage 
+        } : player;
+      });
+
+      return {
+        ...prev,
+        phase: 'word-distribution',
+        players: playersWithScores,
+        currentPlayerIndex: 0,
+        civilianWord: wordPair.civilian,
+        undercoverWord: wordPair.undercover,
+        startingPlayerIndex: undefined,
+      };
+    });
+  }, []);
+
+  const startNewRound = useCallback(() => {
+    setGameState(prev => {
+      const usedWordPairs = getUsedWordPairs();
+      const resetPlayers = resetPlayersForNewRound(prev.players);
+      const playerConfigs = resetPlayers.map(p => ({ 
+        name: p.name, 
+        profileImage: p.profileImage 
+      }));
+      const { players, wordPair } = createPlayersWithRoles(
+        playerConfigs,
+        prev.gameSettings.undercoverCount,
+        prev.gameSettings.hasMisterWhite,
+        usedWordPairs
+      );
+
+      // Preserve scores and profile images
+      const playersWithScores = players.map(player => {
+        const existingPlayer = resetPlayers.find(p => p.name === player.name);
+        return existingPlayer ? { 
+          ...player, 
+          score: existingPlayer.score,
+          profileImage: existingPlayer.profileImage 
+        } : player;
       });
 
       return {
@@ -213,8 +266,29 @@ export function useGame() {
         civilianWord: wordPair.civilian,
         undercoverWord: wordPair.undercover,
         roundNumber: prev.roundNumber + 1,
+        startingPlayerIndex: undefined,
         winner: undefined,
         winnerPlayers: undefined,
+      };
+    });
+  }, []);
+
+  const enableAmnesicMode = useCallback((playerId: string) => {
+    setGameState(prev => {
+      const updatedPlayers = prev.players.map(p => {
+        if (p.id === playerId) {
+          return { ...p, hasSeenWord: false };
+        }
+        return p;
+      });
+      
+      const playerIndex = updatedPlayers.findIndex(p => p.id === playerId);
+      
+      return {
+        ...prev,
+        players: updatedPlayers,
+        currentPlayerIndex: playerIndex,
+        phase: 'word-distribution',
       };
     });
   }, []);
@@ -242,7 +316,10 @@ export function useGame() {
     revealPlayerWord,
     eliminatePlayer,
     handleMisterWhiteGuessAttempt,
+    selectStartingPlayer,
+    skipRound,
     startNewRound,
+    enableAmnesicMode,
     resetGame,
   };
 }

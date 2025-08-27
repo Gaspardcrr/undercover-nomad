@@ -1,78 +1,110 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { PlayerConfigDialog } from '@/components/game/PlayerConfigDialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { Trash2, Plus, Play } from 'lucide-react';
+import { Trash2, Plus, Play, Edit } from 'lucide-react';
+import type { PlayerConfig } from '@/types/playerConfig';
+import { autoAdjustGameConfig } from '@/utils/gameLogic';
 
 interface PlayerSetupProps {
-  onStartGame: (playerNames: string[], undercoverCount: number, hasMisterWhite: boolean) => void;
+  onStartGame: (playerConfigs: PlayerConfig[], undercoverCount: number, hasMisterWhite: boolean) => void;
 }
 
 export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
-  const [playerNames, setPlayerNames] = useState<string[]>(['', '', '']);
+  const [playerConfigs, setPlayerConfigs] = useState<PlayerConfig[]>([]);
   const [undercoverCount, setUndercoverCount] = useState(1);
   const [hasMisterWhite, setHasMisterWhite] = useState(true);
+  const [editingPlayer, setEditingPlayer] = useState<PlayerConfig | undefined>();
+  const [showPlayerDialog, setShowPlayerDialog] = useState(false);
 
   const addPlayer = () => {
-    if (playerNames.length < 12) {
-      setPlayerNames([...playerNames, '']);
+    if (playerConfigs.length < 12) {
+      setEditingPlayer(undefined);
+      setShowPlayerDialog(true);
     }
   };
 
-  const removePlayer = (index: number) => {
-    if (playerNames.length > 3) {
-      const newNames = playerNames.filter((_, i) => i !== index);
-      setPlayerNames(newNames);
-      
-      // Adjust undercover count if needed
-      const activePlayers = newNames.filter(name => name.trim()).length;
-      const minCivilsRequired = Math.ceil(activePlayers / 2);
-      const maxNonCivils = activePlayers - minCivilsRequired;
-      const misterWhiteSlots = hasMisterWhite ? 1 : 0;
-      const maxUndercovers = Math.max(1, maxNonCivils - misterWhiteSlots);
-      if (undercoverCount > maxUndercovers) {
-        setUndercoverCount(Math.max(1, maxUndercovers));
-      }
+  const editPlayer = (player: PlayerConfig) => {
+    setEditingPlayer(player);
+    setShowPlayerDialog(true);
+  };
+
+  const removePlayer = (playerId: string) => {
+    const newConfigs = playerConfigs.filter(p => p.id !== playerId);
+    setPlayerConfigs(newConfigs);
+    
+    // Auto-adjust game settings
+    if (newConfigs.length >= 3) {
+      const adjusted = autoAdjustGameConfig(newConfigs.length, undercoverCount, hasMisterWhite);
+      setUndercoverCount(adjusted.undercoverCount);
+      setHasMisterWhite(adjusted.hasMisterWhite);
     }
   };
 
-  const updatePlayerName = (index: number, name: string) => {
-    const newNames = [...playerNames];
-    newNames[index] = name.slice(0, 16); // Limit to 16 characters
-    setPlayerNames(newNames);
+  const handleSavePlayer = (player: PlayerConfig) => {
+    if (editingPlayer) {
+      // Edit existing player
+      setPlayerConfigs(prev => prev.map(p => p.id === player.id ? player : p));
+    } else {
+      // Add new player
+      setPlayerConfigs(prev => [...prev, player]);
+    }
+    
+    // Auto-adjust game settings after adding/editing
+    const newCount = editingPlayer ? playerConfigs.length : playerConfigs.length + 1;
+    if (newCount >= 3) {
+      const adjusted = autoAdjustGameConfig(newCount, undercoverCount, hasMisterWhite);
+      setUndercoverCount(adjusted.undercoverCount);
+      setHasMisterWhite(adjusted.hasMisterWhite);
+    }
   };
 
   const getMaxUndercovers = () => {
-    const activePlayers = playerNames.filter(name => name.trim()).length;
-    const minCivilsRequired = Math.ceil(activePlayers / 2);
-    const maxNonCivils = activePlayers - minCivilsRequired;
-    const misterWhiteSlots = hasMisterWhite ? 1 : 0;
-    return Math.max(1, maxNonCivils - misterWhiteSlots);
+    if (playerConfigs.length < 3) return 1;
+    const adjusted = autoAdjustGameConfig(playerConfigs.length, 10, hasMisterWhite);
+    return adjusted.undercoverCount;
   };
 
   const canStartGame = () => {
-    const validNames = playerNames.filter(name => name.trim()).length;
-    if (validNames < 3) return false;
+    if (playerConfigs.length < 3) return false;
     
-    // Check if configuration respects 50% civilian rule
-    const minCivilsRequired = Math.ceil(validNames / 2);
+    // Check if configuration respects the rules
+    const minCivilsRequired = hasMisterWhite ? 
+      Math.ceil(playerConfigs.length / 2) : 
+      Math.ceil(playerConfigs.length / 2) + 1;
     const nonCivilCount = undercoverCount + (hasMisterWhite ? 1 : 0);
-    const actualCivils = validNames - nonCivilCount;
+    const actualCivils = playerConfigs.length - nonCivilCount;
     
     return actualCivils >= minCivilsRequired && undercoverCount >= 1;
   };
 
   const handleStartGame = () => {
-    const validNames = playerNames
-      .map(name => name.trim())
-      .filter(name => name.length > 0);
-    
     if (canStartGame()) {
-      onStartGame(validNames, undercoverCount, hasMisterWhite);
+      onStartGame(playerConfigs, undercoverCount, hasMisterWhite);
     }
+  };
+
+  const handleUndercoverCountChange = (newCount: number) => {
+    setUndercoverCount(newCount);
+    
+    // Auto-adjust if needed
+    const adjusted = autoAdjustGameConfig(playerConfigs.length, newCount, hasMisterWhite);
+    if (adjusted.undercoverCount !== newCount) {
+      setUndercoverCount(adjusted.undercoverCount);
+    }
+  };
+
+  const handleMisterWhiteToggle = (enabled: boolean) => {
+    setHasMisterWhite(enabled);
+    
+    // Auto-adjust if needed
+    const adjusted = autoAdjustGameConfig(playerConfigs.length, undercoverCount, enabled);
+    setUndercoverCount(adjusted.undercoverCount);
+    setHasMisterWhite(adjusted.hasMisterWhite);
   };
 
   return (
@@ -92,131 +124,165 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
                 variant="game"
                 size="sm"
                 onClick={addPlayer}
-                disabled={playerNames.length >= 12}
+                disabled={playerConfigs.length >= 12}
               >
                 <Plus className="w-4 h-4" />
-                Ajouter
+                Ajouter joueur
               </Button>
             </div>
             
-            <div className="grid gap-3">
-              {playerNames.map((name, index) => (
-                <div key={index} className="flex gap-2 items-center">
-                  <div className={cn(
-                    "w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold",
-                    `border-player-${(index % 8) + 1} text-player-${(index % 8) + 1}`
-                  )}>
-                    {index + 1}
-                  </div>
-                  <Input
-                    value={name}
-                    onChange={(e) => updatePlayerName(index, e.target.value)}
-                    placeholder={`Joueur ${index + 1}`}
-                    maxLength={16}
-                    className="flex-1"
-                  />
-                  {playerNames.length > 3 && (
+            {playerConfigs.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <div className="text-lg mb-2">Aucun joueur configuré</div>
+                <div className="text-sm">Cliquez sur "Ajouter joueur" pour commencer</div>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {playerConfigs.map((player, index) => (
+                  <div key={player.id} className="flex gap-3 items-center p-3 rounded-lg border bg-card/50">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold",
+                      `border-player-${(index % 8) + 1} text-player-${(index % 8) + 1}`
+                    )}>
+                      {index + 1}
+                    </div>
+                    
+                    <Avatar className="w-10 h-10">
+                      {player.profileImage ? (
+                        <AvatarImage src={player.profileImage} alt={player.name} />
+                      ) : null}
+                      <AvatarFallback className="bg-muted text-muted-foreground font-semibold">
+                        {player.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 font-medium">
+                      {player.name}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => editPlayer(player)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    
                     <Button
                       variant="danger"
                       size="sm"
-                      onClick={() => removePlayer(index)}
+                      onClick={() => removePlayer(player.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
-                  )}
-                </div>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
             
             <div className="text-sm text-muted-foreground text-center">
-              {playerNames.filter(name => name.trim()).length} joueur(s) configuré(s)
+              {playerConfigs.length} joueur(s) configuré(s)
             </div>
           </div>
 
           {/* Game Settings */}
-          <div className="space-y-4 border-t border-border pt-6">
-            <Label className="text-lg font-semibold">Paramètres du jeu</Label>
-            
-            {/* Undercover Count */}
-            <div className="space-y-2">
-              <Label>Nombre d'Undercovers : {undercoverCount}</Label>
-              <div className="flex gap-2">
-                {Array.from({ length: getMaxUndercovers() }, (_, i) => i + 1).map(num => (
-                  <Button
-                    key={num}
-                    variant={undercoverCount === num ? "undercover" : "outline"}
-                    size="sm"
-                    onClick={() => setUndercoverCount(num)}
-                  >
-                    {num}
-                  </Button>
-                ))}
+          {playerConfigs.length >= 3 && (
+            <div className="space-y-4 border-t border-border pt-6">
+              <Label className="text-lg font-semibold">Paramètres du jeu</Label>
+              
+              {/* Undercover Count */}
+              <div className="space-y-2">
+                <Label>Nombre d'Undercovers : {undercoverCount}</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {Array.from({ length: getMaxUndercovers() }, (_, i) => i + 1).map(num => (
+                    <Button
+                      key={num}
+                      variant={undercoverCount === num ? "undercover" : "outline"}
+                      size="sm"
+                      onClick={() => handleUndercoverCountChange(num)}
+                    >
+                      {num}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mister White Toggle */}
+              <div className="flex items-center justify-between">
+                <Label>Inclure Mister White</Label>
+                <Switch
+                  checked={hasMisterWhite}
+                  onCheckedChange={handleMisterWhiteToggle}
+                />
               </div>
             </div>
-
-            {/* Mister White Toggle */}
-            <div className="flex items-center justify-between">
-              <Label>Inclure Mister White</Label>
-              <Switch
-                checked={hasMisterWhite}
-                onCheckedChange={setHasMisterWhite}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Game Summary */}
-          <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-            <div className="font-semibold text-center">Résumé de la partie</div>
-            {(() => {
-              const validPlayerCount = playerNames.filter(name => name.trim()).length;
-              const civilCount = validPlayerCount - undercoverCount - (hasMisterWhite ? 1 : 0);
-              const minCivilsRequired = Math.ceil(validPlayerCount / 2);
-              const isValidConfig = civilCount >= minCivilsRequired;
-              
-              return (
-                <>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div className="text-center">
-                      <div className={cn(
-                        "font-semibold",
-                        isValidConfig ? "text-civil" : "text-destructive"
-                      )}>
-                        {civilCount}
+          {playerConfigs.length >= 3 && (
+            <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+              <div className="font-semibold text-center">Résumé de la partie</div>
+              {(() => {
+                const civilCount = playerConfigs.length - undercoverCount - (hasMisterWhite ? 1 : 0);
+                const minCivilsRequired = hasMisterWhite ? 
+                  Math.ceil(playerConfigs.length / 2) : 
+                  Math.ceil(playerConfigs.length / 2) + 1;
+                const isValidConfig = civilCount >= minCivilsRequired;
+                
+                return (
+                  <>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="text-center">
+                        <div className={cn(
+                          "font-semibold",
+                          isValidConfig ? "text-civil" : "text-destructive"
+                        )}>
+                          {civilCount}
+                        </div>
+                        <div>Civils</div>
                       </div>
-                      <div>Civils</div>
+                      <div className="text-center">
+                        <div className="text-undercover font-semibold">{undercoverCount}</div>
+                        <div>Undercover</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-mister-white font-semibold">{hasMisterWhite ? 1 : 0}</div>
+                        <div>Mister White</div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-undercover font-semibold">{undercoverCount}</div>
-                      <div>Undercover</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-mister-white font-semibold">{hasMisterWhite ? 1 : 0}</div>
-                      <div>Mister White</div>
-                    </div>
-                  </div>
-                  {!isValidConfig && (
-                    <div className="text-destructive text-sm text-center">
-                      ⚠️ Au moins {minCivilsRequired} civils requis
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
+                    {!isValidConfig && (
+                      <div className="text-destructive text-sm text-center">
+                        ⚠️ Configuration invalide : Au moins {minCivilsRequired} civils requis
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Start Game Button */}
-          <Button
-            variant="game"
-            size="xl"
-            className="w-full"
-            onClick={handleStartGame}
-            disabled={!canStartGame()}
-          >
-            <Play className="w-5 h-5" />
-            Lancer la partie
-          </Button>
+          {playerConfigs.length >= 3 && (
+            <Button
+              variant="game"
+              size="xl"
+              className="w-full"
+              onClick={handleStartGame}
+              disabled={!canStartGame()}
+            >
+              <Play className="w-5 h-5" />
+              Lancer la partie
+            </Button>
+          )}
         </CardContent>
       </Card>
+
+      <PlayerConfigDialog
+        player={editingPlayer}
+        open={showPlayerDialog}
+        onOpenChange={setShowPlayerDialog}
+        onSave={handleSavePlayer}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ export interface Player {
   role: Role;
   word?: string;
   avatar?: string;
+  profileImage?: string; // Base64 encoded image
   score: number;
   isEliminated: boolean;
   hasSeenWord: boolean;
@@ -15,9 +16,10 @@ export interface Player {
 }
 
 export interface GameState {
-  phase: 'setup' | 'word-distribution' | 'playing' | 'voting' | 'game-over';
+  phase: 'setup' | 'word-distribution' | 'playing' | 'voting' | 'game-over' | 'starting-player-selection';
   players: Player[];
   currentPlayerIndex: number;
+  startingPlayerIndex?: number;
   civilianWord: string;
   undercoverWord: string;
   roundNumber: number;
