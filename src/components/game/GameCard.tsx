@@ -37,11 +37,37 @@ export function GameCard({
             <div className="text-sm text-muted-foreground">
               Vous êtes Mister White !<br/>Écoutez et devinez le mot
             </div>
+            {gamePhase === 'amnesic-mode' && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClick?.();
+                }}
+                className="mt-4"
+              >
+                Retour à la partie
+              </Button>
+            )}
           </div>
         ) : (
           <div className="text-center space-y-4">
             <div className="text-4xl font-bold text-primary">{player.word}</div>
             <div className="text-sm text-muted-foreground">Votre mot secret</div>
+            {gamePhase === 'amnesic-mode' && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClick?.();
+                }}
+                className="mt-4"
+              >
+                Retour à la partie
+              </Button>
+            )}
           </div>
         );
       }
@@ -49,7 +75,7 @@ export function GameCard({
         <div className="text-center space-y-4">
           <div className="text-4xl">🎴</div>
           <div className="text-lg font-semibold">{player.name}</div>
-          <div className="text-sm text-accent animate-pulse">
+          <div className="text-sm text-accent">
             👆 Cliquez pour révéler votre carte
           </div>
         </div>
@@ -93,7 +119,7 @@ export function GameCard({
         className={cn(
           `player-card-${player.colorIndex}`,
           "border-2 shadow-card transition-all duration-300 cursor-pointer min-h-[200px] flex items-center justify-center",
-          isCurrentPlayer && (gamePhase === 'word-distribution' || gamePhase === 'amnesic-mode') && "ring-2 ring-primary animate-pulse",
+          isCurrentPlayer && (gamePhase === 'word-distribution' || gamePhase === 'amnesic-mode') && "ring-2 ring-primary ring-offset-2",
           player.isEliminated && "opacity-50 grayscale"
         )}
         onClick={handleCardClick}

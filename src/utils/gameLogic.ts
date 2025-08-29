@@ -28,24 +28,18 @@ export function autoAdjustGameConfig(
   let finalUndercoverCount = requestedUndercoverCount;
   let finalHasMisterWhite = hasMisterWhite;
 
-  if (hasMisterWhite) {
-    // With Mister White: civilians >= 50%
-    const minCivilsRequired = Math.floor(playerCount / 2);
-    const maxNonCivils = playerCount - minCivilsRequired;
-    const maxUndercoverWithMisterWhite = Math.max(1, maxNonCivils - 1);
-    
-    if (finalUndercoverCount > maxUndercoverWithMisterWhite) {
-      finalUndercoverCount = maxUndercoverWithMisterWhite;
-    }
-  } else {
-    // Without Mister White: civilians >= 50% + 1
-    const minCivilsRequired = Math.floor(playerCount / 2) + 1;
-    const maxNonCivils = playerCount - minCivilsRequired;
-    const maxUndercoverWithoutMisterWhite = Math.max(1, maxNonCivils);
-    
-    if (finalUndercoverCount > maxUndercoverWithoutMisterWhite) {
-      finalUndercoverCount = maxUndercoverWithoutMisterWhite;
-    }
+  // Rule: Always have at least "undercoverCount + 1" civilians
+  // This ensures civilians always outnumber undercovers
+  const minCivilsRequired = finalUndercoverCount + 1;
+  const maxNonCivils = playerCount - minCivilsRequired;
+  
+  // Calculate max undercovers based on whether Mister White is present
+  const maxUndercoverCount = hasMisterWhite ? 
+    Math.max(1, maxNonCivils - 1) : // Reserve 1 slot for Mister White
+    Math.max(1, maxNonCivils);      // No Mister White, all remaining can be undercover
+  
+  if (finalUndercoverCount > maxUndercoverCount) {
+    finalUndercoverCount = maxUndercoverCount;
   }
 
   return { 
