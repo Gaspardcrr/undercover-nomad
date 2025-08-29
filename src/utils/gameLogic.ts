@@ -30,7 +30,7 @@ export function autoAdjustGameConfig(
 
   if (hasMisterWhite) {
     // With Mister White: civilians >= 50%
-    const minCivilsRequired = Math.ceil(playerCount / 2);
+    const minCivilsRequired = Math.floor(playerCount / 2);
     const maxNonCivils = playerCount - minCivilsRequired;
     const maxUndercoverWithMisterWhite = Math.max(1, maxNonCivils - 1);
     
@@ -39,7 +39,7 @@ export function autoAdjustGameConfig(
     }
   } else {
     // Without Mister White: civilians >= 50% + 1
-    const minCivilsRequired = Math.ceil(playerCount / 2) + 1;
+    const minCivilsRequired = Math.floor(playerCount / 2) + 1;
     const maxNonCivils = playerCount - minCivilsRequired;
     const maxUndercoverWithoutMisterWhite = Math.max(1, maxNonCivils);
     

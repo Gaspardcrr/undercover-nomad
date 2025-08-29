@@ -13,7 +13,7 @@ interface GameCardProps {
   onEliminate?: () => void;
   onAmnesicMode?: () => void;
   showEliminateButton: boolean;
-  gamePhase: 'word-distribution' | 'playing' | 'voting' | 'game-over' | 'starting-player-selection' | 'setup';
+  gamePhase: 'setup' | 'word-distribution' | 'playing' | 'voting' | 'game-over' | 'starting-player-selection' | 'amnesic-mode';
 }
 
 export function GameCard({ 
@@ -28,7 +28,7 @@ export function GameCard({
   const [isFlipped, setIsFlipped] = React.useState(false);
 
   const getCardContent = () => {
-    if (gamePhase === 'word-distribution') {
+    if (gamePhase === 'word-distribution' || gamePhase === 'amnesic-mode') {
       if (player.hasSeenWord || isFlipped) {
         return player.role === 'mister-white' ? (
           <div className="text-center space-y-4">
@@ -75,7 +75,7 @@ export function GameCard({
   };
 
   const handleCardClick = () => {
-    if (gamePhase === 'word-distribution' && isCurrentPlayer && !player.hasSeenWord) {
+    if ((gamePhase === 'word-distribution' || gamePhase === 'amnesic-mode') && isCurrentPlayer && !player.hasSeenWord) {
       if (!isFlipped) {
         setIsFlipped(true);
       } else {
@@ -93,7 +93,7 @@ export function GameCard({
         className={cn(
           `player-card-${player.colorIndex}`,
           "border-2 shadow-card transition-all duration-300 cursor-pointer min-h-[200px] flex items-center justify-center",
-          isCurrentPlayer && gamePhase === 'word-distribution' && "ring-2 ring-primary animate-pulse",
+          isCurrentPlayer && (gamePhase === 'word-distribution' || gamePhase === 'amnesic-mode') && "ring-2 ring-primary animate-pulse",
           player.isEliminated && "opacity-50 grayscale"
         )}
         onClick={handleCardClick}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,21 @@ export function PlayerConfigDialog({
 }: PlayerConfigDialogProps) {
   const [name, setName] = useState(player?.name || '');
   const [profileImage, setProfileImage] = useState(player?.profileImage);
+
+  // Clear form when opening for a new player
+  useEffect(() => {
+    if (open) {
+      if (player) {
+        // Editing existing player
+        setName(player.name);
+        setProfileImage(player.profileImage);
+      } else {
+        // Adding new player - clear form
+        setName('');
+        setProfileImage(undefined);
+      }
+    }
+  }, [open, player]);
 
   const handleSave = () => {
     if (name.trim()) {

@@ -47,8 +47,13 @@ export function GameBoard({
   const getPhaseDescription = () => {
     switch (phase) {
       case 'word-distribution':
+      case 'amnesic-mode':
         const currentPlayer = players[gameState.currentPlayerIndex];
         const allPlayersHaveSeen = players.every(p => p.hasSeenWord);
+        
+        if (gameState.phase === 'amnesic-mode') {
+          return `🧠 Mode amnésique - ${currentPlayer.name}, cliquez sur votre carte`;
+        }
         
         if (allPlayersHaveSeen) {
           return 'Tous les joueurs ont découvert leur rôle. La partie peut commencer !';
@@ -128,52 +133,20 @@ export function GameBoard({
       )}
 
       {/* Card Revelation Section */}
-      {phase === 'word-distribution' && (
+      {(phase === 'word-distribution' || phase === 'amnesic-mode') && (
         <Card className="shadow-card bg-gradient-card border-primary/20">
           <CardContent className="p-6">
             <div className="text-center space-y-4">
-              {/* Current Player's Turn */}
-              {!players.every(p => p.hasSeenWord) && (
+              {phase === 'amnesic-mode' ? (
+                /* Amnesic mode - show only the specific player's card */
                 <div>
                   <div className="text-lg font-semibold mb-4">
-                    🎴 Révélation des cartes secrètes
+                    🧠 Mode amnésique
                   </div>
                   
-                  {/* Show only the current player's card or message */}
                   {(() => {
                     const currentPlayer = players[gameState.currentPlayerIndex];
-                    const allPlayersHaveSeen = players.every(p => p.hasSeenWord);
                     
-                    if (allPlayersHaveSeen) {
-                      return (
-                        <div className="text-xl font-bold text-primary animate-fade-in">
-                          ✅ Tous les joueurs ont découvert leur rôle !
-                        </div>
-                      );
-                    }
-                    
-                    if (currentPlayer && currentPlayer.hasSeenWord) {
-                      // Show pass phone message
-                      const nextPlayerIndex = (gameState.currentPlayerIndex + 1) % players.length;
-                      const nextPlayer = players[nextPlayerIndex];
-                      if (nextPlayer && !nextPlayer.hasSeenWord) {
-                        return (
-                          <div className="space-y-4">
-                            <div className="text-lg text-muted-foreground">
-                              Carte vue ✓
-                            </div>
-                            <div className="text-xl font-bold text-accent animate-pulse">
-                              📱 Passez le téléphone à {nextPlayer.name}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {nextPlayer.name} doit cliquer sur sa carte pour la révéler
-                            </div>
-                          </div>
-                        );
-                      }
-                    }
-                    
-                    // Show current player's card to reveal
                     if (currentPlayer && !currentPlayer.hasSeenWord) {
                       return (
                         <div className="space-y-4">
@@ -195,41 +168,117 @@ export function GameBoard({
                           </div>
                         </div>
                       );
+                    } else {
+                      return (
+                        <div className="text-xl font-bold text-primary animate-fade-in">
+                          ✅ Carte revue ! Retour au jeu...
+                        </div>
+                      );
                     }
-                    
-                    return null;
                   })()}
                 </div>
+              ) : (
+                /* Normal word distribution */
+                <>
+                  {!players.every(p => p.hasSeenWord) && (
+                    <div>
+                      <div className="text-lg font-semibold mb-4">
+                        🎴 Révélation des cartes secrètes
+                      </div>
+                      
+                      {/* Show only the current player's card or message */}
+                      {(() => {
+                        const currentPlayer = players[gameState.currentPlayerIndex];
+                        const allPlayersHaveSeen = players.every(p => p.hasSeenWord);
+                        
+                        if (allPlayersHaveSeen) {
+                          return (
+                            <div className="text-xl font-bold text-primary animate-fade-in">
+                              ✅ Tous les joueurs ont découvert leur rôle !
+                            </div>
+                          );
+                        }
+                        
+                        if (currentPlayer && currentPlayer.hasSeenWord) {
+                          // Show pass phone message
+                          const nextPlayerIndex = (gameState.currentPlayerIndex + 1) % players.length;
+                          const nextPlayer = players[nextPlayerIndex];
+                          if (nextPlayer && !nextPlayer.hasSeenWord) {
+                            return (
+                              <div className="space-y-4">
+                                <div className="text-lg text-muted-foreground">
+                                  Carte vue ✓
+                                </div>
+                                <div className="text-xl font-bold text-accent animate-pulse">
+                                  📱 Passez le téléphone à {nextPlayer.name}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {nextPlayer.name} doit cliquer sur sa carte pour la révéler
+                                </div>
+                              </div>
+                            );
+                          }
+                        }
+                        
+                        // Show current player's card to reveal
+                        if (currentPlayer && !currentPlayer.hasSeenWord) {
+                          return (
+                            <div className="space-y-4">
+                              <div className="text-lg font-semibold">
+                                👆 {currentPlayer.name}, cliquez sur votre carte ci-dessous
+                              </div>
+                              <div className="max-w-md mx-auto">
+                                <GameCard
+                                  key={currentPlayer.id}
+                                  player={currentPlayer}
+                                  isCurrentPlayer={true}
+                                  onClick={() => onPlayerCardClick(currentPlayer)}
+                                  showEliminateButton={false}
+                                  gamePhase={phase}
+                                />
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Regardez votre carte secrètement, puis cliquez à nouveau pour la retourner
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return null;
+                      })()}
+                    </div>
+                  )}
+                  
+                  {/* Progress indicator */}
+                  <div className="flex justify-center space-x-2 mt-6">
+                    {players.map((player, index) => (
+                      <div
+                        key={player.id}
+                        className={cn(
+                          "w-3 h-3 rounded-full transition-all duration-300",
+                          player.hasSeenWord 
+                            ? "bg-primary shadow-glow" 
+                            : index === gameState.currentPlayerIndex 
+                              ? "bg-accent animate-pulse" 
+                              : "bg-muted"
+                        )}
+                        title={`${player.name}${player.hasSeenWord ? ' ✓' : index === gameState.currentPlayerIndex ? ' (en cours)' : ''}`}
+                      />
+                    ))}
+                  </div>
+                  
+                  <div className="text-sm text-muted-foreground">
+                    {players.filter(p => p.hasSeenWord).length} / {players.length} cartes révélées
+                  </div>
+                </>
               )}
-              
-              {/* Progress indicator */}
-              <div className="flex justify-center space-x-2 mt-6">
-                {players.map((player, index) => (
-                  <div
-                    key={player.id}
-                    className={cn(
-                      "w-3 h-3 rounded-full transition-all duration-300",
-                      player.hasSeenWord 
-                        ? "bg-primary shadow-glow" 
-                        : index === gameState.currentPlayerIndex 
-                          ? "bg-accent animate-pulse" 
-                          : "bg-muted"
-                    )}
-                    title={`${player.name}${player.hasSeenWord ? ' ✓' : index === gameState.currentPlayerIndex ? ' (en cours)' : ''}`}
-                  />
-                ))}
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                {players.filter(p => p.hasSeenWord).length} / {players.length} cartes révélées
-              </div>
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Player Grid - Only show during playing phase */}
-      {phase !== 'word-distribution' && (
+      {phase !== 'word-distribution' && phase !== 'amnesic-mode' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {players.map((player) => (
             <GameCard

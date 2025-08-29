@@ -138,6 +138,7 @@ export function UndercoverGame() {
         );
       
       case 'word-distribution':
+      case 'amnesic-mode':
       case 'playing':
         return (
           <div className="space-y-6">

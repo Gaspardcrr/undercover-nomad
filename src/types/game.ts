@@ -16,7 +16,7 @@ export interface Player {
 }
 
 export interface GameState {
-  phase: 'setup' | 'word-distribution' | 'playing' | 'voting' | 'game-over' | 'starting-player-selection';
+  phase: 'setup' | 'word-distribution' | 'playing' | 'voting' | 'game-over' | 'starting-player-selection' | 'amnesic-mode';
   players: Player[];
   currentPlayerIndex: number;
   startingPlayerIndex?: number;

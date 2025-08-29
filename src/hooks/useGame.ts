@@ -75,6 +75,22 @@ export function useGame() {
         return p;
       });
 
+      // Handle amnesic mode - return to playing phase after seeing card
+      if (prev.phase === 'amnesic-mode') {
+        setTimeout(() => {
+          setGameState(current => ({
+            ...current,
+            phase: 'playing'
+          }));
+        }, 1500);
+        
+        return {
+          ...prev,
+          players: updatedPlayers,
+        };
+      }
+
+      // Normal word distribution logic
       // Find next player who hasn't seen their word
       let nextIndex = (prev.currentPlayerIndex + 1) % prev.players.length;
       while (nextIndex !== prev.currentPlayerIndex && updatedPlayers[nextIndex].hasSeenWord) {
@@ -288,7 +304,7 @@ export function useGame() {
         ...prev,
         players: updatedPlayers,
         currentPlayerIndex: playerIndex,
-        phase: 'word-distribution',
+        phase: 'amnesic-mode',
       };
     });
   }, []);
