@@ -40,6 +40,9 @@ export function UndercoverGame() {
   const handlePlayerCardClick = (player: Player) => {
     if (gameState.phase === 'word-distribution' && !player.hasSeenWord && !player.isEliminated) {
       revealPlayerWord(player);
+    } else if (gameState.phase === 'amnesic-mode' && player.id === gameState.players[gameState.currentPlayerIndex].id) {
+      // En mode amnésique, cliquer sur la carte ramène à la partie
+      revealPlayerWord(player);
     }
   };
 
