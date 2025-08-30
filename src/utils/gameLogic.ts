@@ -25,6 +25,11 @@ export function autoAdjustGameConfig(
     return { undercoverCount: 1, hasMisterWhite: false };
   }
 
+  // Exception: for 3 players, force a valid config: 1 undercover, no Mister White
+  if (playerCount === 3) {
+    return { undercoverCount: 1, hasMisterWhite: false };
+  }
+
   let finalUndercoverCount = requestedUndercoverCount;
   let finalHasMisterWhite = hasMisterWhite;
 
