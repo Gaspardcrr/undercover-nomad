@@ -18,26 +18,26 @@ export function useGame() {
     undercoverWord: '',
     roundNumber: 1,
     gameSettings: {
-minPlayers: 3,
-maxPlayers: 12,
-undercoverCount: 1,
-misterWhiteCount: 1,
+      minPlayers: 3,
+      maxPlayers: 12,
+      undercoverCount: 1,
+      hasMisterWhite: true,
     },
   });
 
-const startGame = useCallback((
-  playerConfigs: Array<{ name: string, profileImage?: string }>, 
-  undercoverCount: number, 
-  misterWhiteCount: number
-) => {
+  const startGame = useCallback((
+    playerConfigs: Array<{ name: string, profileImage?: string }>, 
+    undercoverCount: number, 
+    hasMisterWhite: boolean
+  ) => {
     try {
       const usedWordPairs = getUsedWordPairs();
-const { players, wordPair } = createPlayersWithRoles(
-  playerConfigs, 
-  undercoverCount, 
-  misterWhiteCount, 
-  usedWordPairs
-);
+      const { players, wordPair } = createPlayersWithRoles(
+        playerConfigs, 
+        undercoverCount, 
+        hasMisterWhite, 
+        usedWordPairs
+      );
 
       setGameState({
         phase: 'word-distribution',
@@ -46,12 +46,12 @@ const { players, wordPair } = createPlayersWithRoles(
         civilianWord: wordPair.civilian,
         undercoverWord: wordPair.undercover,
         roundNumber: 1,
-gameSettings: {
-  minPlayers: 3,
-  maxPlayers: 12,
-  undercoverCount,
-  misterWhiteCount,
-},
+        gameSettings: {
+          minPlayers: 3,
+          maxPlayers: 12,
+          undercoverCount,
+          hasMisterWhite,
+        },
       });
     } catch (error) {
       // Handle validation error from generatePlayerRoles
@@ -215,10 +215,10 @@ gameSettings: {
         profileImage: p.profileImage 
       }));
       const { players, wordPair } = createPlayersWithRoles(
-playerConfigs,
-prev.gameSettings.undercoverCount,
-prev.gameSettings.misterWhiteCount,
-usedWordPairs
+        playerConfigs,
+        prev.gameSettings.undercoverCount,
+        prev.gameSettings.hasMisterWhite,
+        usedWordPairs
       );
 
       // Preserve scores and profile images
@@ -252,10 +252,10 @@ usedWordPairs
         profileImage: p.profileImage 
       }));
       const { players, wordPair } = createPlayersWithRoles(
-playerConfigs,
-prev.gameSettings.undercoverCount,
-prev.gameSettings.misterWhiteCount,
-usedWordPairs
+        playerConfigs,
+        prev.gameSettings.undercoverCount,
+        prev.gameSettings.hasMisterWhite,
+        usedWordPairs
       );
 
       // Preserve scores and profile images
@@ -312,10 +312,10 @@ usedWordPairs
       undercoverWord: '',
       roundNumber: 1,
       gameSettings: {
-minPlayers: 3,
-maxPlayers: 12,
-undercoverCount: 1,
-misterWhiteCount: 1,
+        minPlayers: 3,
+        maxPlayers: 12,
+        undercoverCount: 1,
+        hasMisterWhite: true,
       },
     });
   }, []);
