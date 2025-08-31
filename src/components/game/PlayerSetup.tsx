@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+
 import { PlayerConfigDialog } from '@/components/game/PlayerConfigDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -11,13 +11,13 @@ import type { PlayerConfig } from '@/types/playerConfig';
 import { autoAdjustGameConfig } from '@/utils/gameLogic';
 
 interface PlayerSetupProps {
-  onStartGame: (playerConfigs: PlayerConfig[], undercoverCount: number, hasMisterWhite: boolean) => void;
+  onStartGame: (playerConfigs: PlayerConfig[], undercoverCount: number, misterWhiteCount: number) => void;
 }
 
 export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
   const [playerConfigs, setPlayerConfigs] = useState<PlayerConfig[]>([]);
   const [undercoverCount, setUndercoverCount] = useState(1);
-  const [hasMisterWhite, setHasMisterWhite] = useState(true);
+  const [misterWhiteCount, setMisterWhiteCount] = useState(1);
   const [editingPlayer, setEditingPlayer] = useState<PlayerConfig | undefined>();
   const [showPlayerDialog, setShowPlayerDialog] = useState(false);
 
@@ -37,12 +37,12 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
     const newConfigs = playerConfigs.filter(p => p.id !== playerId);
     setPlayerConfigs(newConfigs);
     
-    // Auto-adjust game settings
-    if (newConfigs.length >= 3) {
-      const adjusted = autoAdjustGameConfig(newConfigs.length, undercoverCount, hasMisterWhite);
-      setUndercoverCount(adjusted.undercoverCount);
-      setHasMisterWhite(adjusted.hasMisterWhite);
-    }
+// Auto-adjust game settings
+if (newConfigs.length >= 3) {
+  const adjusted = autoAdjustGameConfig(newConfigs.length, undercoverCount, misterWhiteCount);
+  setUndercoverCount(adjusted.undercoverCount);
+  setMisterWhiteCount(adjusted.misterWhiteCount);
+}
   };
 
   const handleSavePlayer = (player: PlayerConfig) => {
@@ -56,56 +56,48 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
     
     // Auto-adjust game settings after adding/editing
     const newCount = editingPlayer ? playerConfigs.length : playerConfigs.length + 1;
-    if (newCount >= 3) {
-      const adjusted = autoAdjustGameConfig(newCount, undercoverCount, hasMisterWhite);
-      setUndercoverCount(adjusted.undercoverCount);
-      setHasMisterWhite(adjusted.hasMisterWhite);
-    }
+if (newCount >= 3) {
+  const adjusted = autoAdjustGameConfig(newCount, undercoverCount, misterWhiteCount);
+  setUndercoverCount(adjusted.undercoverCount);
+  setMisterWhiteCount(adjusted.misterWhiteCount);
+}
   };
 
-  const getMaxUndercovers = () => {
-    if (playerConfigs.length < 3) return 1;
-    const adjusted = autoAdjustGameConfig(playerConfigs.length, 10, hasMisterWhite);
-    return adjusted.undercoverCount;
-  };
+const getMaxUndercovers = () => {
+  if (playerConfigs.length < 3) return 1;
+  const adjusted = autoAdjustGameConfig(playerConfigs.length, 10, misterWhiteCount);
+  return adjusted.undercoverCount;
+};
 
-  const canStartGame = () => {
-    if (playerConfigs.length < 3) return false;
-    
-    // Check if configuration respects the rules
-    const minCivilsRequired = hasMisterWhite ? 
-      Math.ceil(playerConfigs.length / 2) : 
-      Math.ceil(playerConfigs.length / 2) + 1;
-    const nonCivilCount = undercoverCount + (hasMisterWhite ? 1 : 0);
-    const actualCivils = playerConfigs.length - nonCivilCount;
-    
-    return actualCivils >= minCivilsRequired && undercoverCount >= 1;
-  };
+const canStartGame = () => {
+  if (playerConfigs.length < 3) return false;
+  const adjusted = autoAdjustGameConfig(playerConfigs.length, undercoverCount, misterWhiteCount);
+  // Interdiction: U=0 et W=0
+  if (adjusted.undercoverCount === 0 && adjusted.misterWhiteCount === 0) return false;
+  // Ne démarrer que si la config saisie est déjà valide (pas d’autocorrection nécessaire)
+  return adjusted.undercoverCount === undercoverCount && adjusted.misterWhiteCount === misterWhiteCount;
+};
 
-  const handleStartGame = () => {
-    if (canStartGame()) {
-      onStartGame(playerConfigs, undercoverCount, hasMisterWhite);
-    }
-  };
+const handleStartGame = () => {
+  if (canStartGame()) {
+    onStartGame(playerConfigs, undercoverCount, misterWhiteCount);
+  }
+};
 
-  const handleUndercoverCountChange = (newCount: number) => {
-    setUndercoverCount(newCount);
-    
-    // Auto-adjust if needed
-    const adjusted = autoAdjustGameConfig(playerConfigs.length, newCount, hasMisterWhite);
-    if (adjusted.undercoverCount !== newCount) {
-      setUndercoverCount(adjusted.undercoverCount);
-    }
-  };
-
-  const handleMisterWhiteToggle = (enabled: boolean) => {
-    setHasMisterWhite(enabled);
-    
-    // Auto-adjust if needed
-    const adjusted = autoAdjustGameConfig(playerConfigs.length, undercoverCount, enabled);
+const handleUndercoverCountChange = (newCount: number) => {
+  setUndercoverCount(newCount);
+  const adjusted = autoAdjustGameConfig(playerConfigs.length, newCount, misterWhiteCount);
+  if (adjusted.undercoverCount !== newCount) {
     setUndercoverCount(adjusted.undercoverCount);
-    setHasMisterWhite(adjusted.hasMisterWhite);
-  };
+  }
+};
+
+const handleMisterWhiteCountChange = (count: number) => {
+  setMisterWhiteCount(count);
+  const adjusted = autoAdjustGameConfig(playerConfigs.length, undercoverCount, count);
+  setUndercoverCount(adjusted.undercoverCount);
+  setMisterWhiteCount(adjusted.misterWhiteCount);
+};
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -207,14 +199,22 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
                 </div>
               </div>
 
-              {/* Mister White Toggle */}
-              <div className="flex items-center justify-between">
-                <Label>Inclure Mister White</Label>
-                <Switch
-                  checked={hasMisterWhite}
-                  onCheckedChange={handleMisterWhiteToggle}
-                />
-              </div>
+{/* Mister White Count */}
+<div className="space-y-2">
+  <Label>Nombre de Mister White : {misterWhiteCount}</Label>
+  <div className="flex gap-2 flex-wrap">
+    {Array.from({ length: (undercoverCount === 0 ? Math.floor(playerConfigs.length / 4) : Math.floor(playerConfigs.length / 2)) + 1 }, (_, i) => i).map(num => (
+      <Button
+        key={num}
+        variant={misterWhiteCount === num ? "mister-white" : "outline"}
+        size="sm"
+        onClick={() => handleMisterWhiteCountChange(num)}
+      >
+        {num}
+      </Button>
+    ))}
+  </div>
+</div>
             </div>
           )}
 
@@ -222,42 +222,42 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
           {playerConfigs.length >= 3 && (
             <div className="bg-muted/30 rounded-lg p-4 space-y-2">
               <div className="font-semibold text-center">Résumé de la partie</div>
-              {(() => {
-                const civilCount = playerConfigs.length - undercoverCount - (hasMisterWhite ? 1 : 0);
-                const minCivilsRequired = hasMisterWhite ? 
-                  Math.ceil(playerConfigs.length / 2) : 
-                  Math.ceil(playerConfigs.length / 2) + 1;
-                const isValidConfig = civilCount >= minCivilsRequired;
-                
-                return (
-                  <>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div className="text-center">
-                        <div className={cn(
-                          "font-semibold",
-                          isValidConfig ? "text-civil" : "text-destructive"
-                        )}>
-                          {civilCount}
-                        </div>
-                        <div>Civils</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-undercover font-semibold">{undercoverCount}</div>
-                        <div>Undercover</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-mister-white font-semibold">{hasMisterWhite ? 1 : 0}</div>
-                        <div>Mister White</div>
-                      </div>
-                    </div>
-                    {!isValidConfig && (
-                      <div className="text-destructive text-sm text-center">
-                        ⚠️ Configuration invalide : Au moins {minCivilsRequired} civils requis
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+{(() => {
+  const civilCount = playerConfigs.length - undercoverCount - misterWhiteCount;
+  const minCivilsRequired = undercoverCount > 0 ? (undercoverCount + 1) : 0;
+  const halfLimit = Math.floor(playerConfigs.length / 2);
+  const nonCivil = undercoverCount + misterWhiteCount;
+  const isValidConfig = (undercoverCount > 0 ? civilCount >= undercoverCount + 1 : true) && nonCivil <= halfLimit && !(undercoverCount === 0 && misterWhiteCount === 0);
+  
+  return (
+    <>
+      <div className="grid grid-cols-3 gap-4 text-sm">
+        <div className="text-center">
+          <div className={cn(
+            "font-semibold",
+            isValidConfig ? "text-civil" : "text-destructive"
+          )}>
+            {civilCount}
+          </div>
+          <div>Civils</div>
+        </div>
+        <div className="text-center">
+          <div className="text-undercover font-semibold">{undercoverCount}</div>
+          <div>Undercover</div>
+        </div>
+        <div className="text-center">
+          <div className="text-mister-white font-semibold">{misterWhiteCount}</div>
+          <div>Mister White</div>
+        </div>
+      </div>
+      {!isValidConfig && (
+        <div className="text-destructive text-sm text-center">
+          ⚠️ Configuration invalide : Respectez l’équilibre (C ≥ U+1 et U+W ≤ {halfLimit})
+        </div>
+      )}
+    </>
+  );
+})()}
             </div>
           )}
 

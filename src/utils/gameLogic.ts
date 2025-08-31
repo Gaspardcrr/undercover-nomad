@@ -15,50 +15,70 @@ export function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-// Auto-adjust game configuration to respect rules
+// Auto-adjust game configuration to respect rules (flexible Mister White count)
 export function autoAdjustGameConfig(
   playerCount: number,
   requestedUndercoverCount: number,
-  hasMisterWhite: boolean
-): { undercoverCount: number, hasMisterWhite: boolean } {
+  requestedMisterWhiteCount: number
+): { undercoverCount: number, misterWhiteCount: number } {
+  // Enforce minimum and special 3-player rule
   if (playerCount < 3) {
-    return { undercoverCount: 1, hasMisterWhite: false };
+    return { undercoverCount: 1, misterWhiteCount: 0 };
   }
 
   // Exception: for 3 players, force a valid config: 1 undercover, no Mister White
   if (playerCount === 3) {
-    return { undercoverCount: 1, hasMisterWhite: false };
+    return { undercoverCount: 1, misterWhiteCount: 0 };
   }
 
-  let finalUndercoverCount = requestedUndercoverCount;
-  let finalHasMisterWhite = hasMisterWhite;
+  const total = playerCount;
+  let U = Math.max(0, Math.floor(requestedUndercoverCount || 0));
+  let W = Math.max(0, Math.floor(requestedMisterWhiteCount || 0));
 
-  const nbMisterWhite = finalHasMisterWhite ? 1 : 0;
-  
-  // Règle 1 : Il faut toujours plus de Civils que d'Undercover
-  // nb_civils >= nb_undercover + 1
-  
-  // Règle 2 : Undercover + Mister White ne doivent pas dépasser la moitié des joueurs  
-  // nb_undercover + nb_mister_white <= total_joueurs / 2
-  
-  const maxUndercoverAndMisterWhite = Math.floor(playerCount / 2);
-  const maxUndercoverCount = Math.max(1, maxUndercoverAndMisterWhite - nbMisterWhite);
-  
-  // Appliquer la limite
-  if (finalUndercoverCount > maxUndercoverCount) {
-    finalUndercoverCount = maxUndercoverCount;
+  // Interdiction totale : pas de partie si U = 0 ET W = 0 -> corriger automatiquement
+  if (U === 0 && W === 0) {
+    U = 1; // par défaut on force 1 Undercover
   }
-  
-  // Vérifier que la règle 1 est respectée
-  const nbCivils = playerCount - (finalUndercoverCount + nbMisterWhite);
-  if (nbCivils < finalUndercoverCount + 1) {
-    // Réduire le nombre d'undercover pour respecter la règle
-    finalUndercoverCount = Math.max(1, Math.floor((playerCount - nbMisterWhite - 1) / 2));
+
+  // Cas spécial si pas d’Undercover: Mister White autorisé mais limité à floor(total/4)
+  if (U === 0) {
+    const W_max = Math.floor(total / 4);
+    if (W > W_max) W = W_max;
   }
+
+  // Règle générale d’équilibre
+  // 1. Au moins 1 Civil de plus que les Undercover
+  let C = total - (U + W);
+  if (C < U + 1) {
+    U = Math.max(0, C - 1);
+    C = total - (U + W);
+  }
+
+  // 2. (Undercover + Mister White) ≤ moitié des joueurs (réduire d’abord U puis W)
+  const halfMax = Math.floor(total / 2);
+  if (U + W > halfMax) {
+    let excess = U + W - halfMax;
+    const reduceU = Math.min(U, excess);
+    U -= reduceU;
+    excess -= reduceU;
+    if (excess > 0) {
+      const reduceW = Math.min(W, excess);
+      W -= reduceW;
+    }
+  }
+
+  // Re-appliquer la contrainte spéciale si U == 0 (après ajustements)
+  if (U === 0) {
+    const W_max = Math.floor(total / 4);
+    if (W > W_max) W = W_max;
+  }
+
+  // 3. Recalcul des civils
+  C = total - (U + W);
 
   return { 
-    undercoverCount: Math.max(1, finalUndercoverCount), 
-    hasMisterWhite: finalHasMisterWhite 
+    undercoverCount: U, 
+    misterWhiteCount: W 
   };
 }
 
@@ -66,23 +86,22 @@ export function autoAdjustGameConfig(
 export function generatePlayerRoles(
   playerCount: number,
   undercoverCount: number,
-  hasMisterWhite: boolean
+  misterWhiteCount: number
 ): Role[] {
   const roles: Role[] = [];
   
-  // Add undercover players
+  // Add undercovers
   for (let i = 0; i < undercoverCount; i++) {
     roles.push('undercover');
   }
   
-  // Add Mister White if enabled
-  if (hasMisterWhite) {
+  // Add Mister Whites
+  for (let i = 0; i < misterWhiteCount; i++) {
     roles.push('mister-white');
   }
   
   // Fill remaining slots with civilians
   const remainingSlots = playerCount - roles.length;
-  
   for (let i = 0; i < remainingSlots; i++) {
     roles.push('civil');
   }
@@ -94,11 +113,11 @@ export function generatePlayerRoles(
 export function createPlayersWithRoles(
   playerConfigs: Array<{ name: string, profileImage?: string }>,
   undercoverCount: number,
-  hasMisterWhite: boolean,
+  misterWhiteCount: number,
   usedWordPairs: WordPair[] = []
 ): { players: Player[], wordPair: WordPair } {
   const wordPair = getRandomWordPair(usedWordPairs);
-  const roles = generatePlayerRoles(playerConfigs.length, undercoverCount, hasMisterWhite);
+  const roles = generatePlayerRoles(playerConfigs.length, undercoverCount, misterWhiteCount);
   
   const players: Player[] = playerConfigs.map((config, index) => ({
     id: `player-${index}`,

@@ -32,7 +32,7 @@ export interface GameSettings {
   minPlayers: number;
   maxPlayers: number;
   undercoverCount: number;
-  hasMisterWhite: boolean;
+  misterWhiteCount: number;
 }
 
 export interface WordPair {

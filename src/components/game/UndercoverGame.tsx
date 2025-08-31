@@ -33,9 +33,9 @@ export function UndercoverGame() {
   const [amnesicPlayer, setAmnesicPlayer] = useState<Player | null>(null);
   const [showAmnesicDialog, setShowAmnesicDialog] = useState(false);
 
-  const handleStartGame = (playerConfigs: PlayerConfig[], undercoverCount: number, hasMisterWhite: boolean) => {
-    startGame(playerConfigs, undercoverCount, hasMisterWhite);
-  };
+const handleStartGame = (playerConfigs: PlayerConfig[], undercoverCount: number, misterWhiteCount: number) => {
+  startGame(playerConfigs, undercoverCount, misterWhiteCount);
+};
 
   const handlePlayerCardClick = (player: Player) => {
     if (gameState.phase === 'word-distribution' && !player.hasSeenWord && !player.isEliminated) {
