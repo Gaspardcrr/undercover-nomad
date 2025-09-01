@@ -33,12 +33,15 @@ export function UndercoverGame() {
   const [amnesicPlayer, setAmnesicPlayer] = useState<Player | null>(null);
   const [showAmnesicDialog, setShowAmnesicDialog] = useState(false);
 
-  const handleStartGame = (playerConfigs: PlayerConfig[], undercoverCount: number, hasMisterWhite: boolean) => {
-    startGame(playerConfigs, undercoverCount, hasMisterWhite);
-  };
+const handleStartGame = (playerConfigs: PlayerConfig[], undercoverCount: number, misterWhiteCount: number) => {
+  startGame(playerConfigs, undercoverCount, misterWhiteCount);
+};
 
   const handlePlayerCardClick = (player: Player) => {
     if (gameState.phase === 'word-distribution' && !player.hasSeenWord && !player.isEliminated) {
+      revealPlayerWord(player);
+    } else if (gameState.phase === 'amnesic-mode' && player.id === gameState.players[gameState.currentPlayerIndex].id) {
+      // En mode amnésique, cliquer sur la carte ramène à la partie
       revealPlayerWord(player);
     }
   };
