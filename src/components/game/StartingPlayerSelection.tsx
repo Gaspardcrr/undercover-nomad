@@ -19,7 +19,7 @@ export function StartingPlayerSelection({
   const [currentHighlight, setCurrentHighlight] = useState(0);
   const [selectedPlayer, setSelectedPlayer] = useState<number | null>(null);
 
-  // Get eligible players for selection (exclude Mister White)
+  // Filter out Mister White from possible starting players
   const eligiblePlayers = players
     .map((player, index) => ({ player, originalIndex: index }))
     .filter(({ player }) => player.role !== 'mister-white');
@@ -33,13 +33,13 @@ export function StartingPlayerSelection({
     
     const interval = setInterval(() => {
       cycles++;
-      setCurrentHighlight((prev) => (prev + 1) % players.length); // Highlight all players
+      setCurrentHighlight((prev) => (prev + 1) % eligiblePlayers.length);
       
       if (cycles >= maxCycles) {
         clearInterval(interval);
         setIsAnimating(false);
         
-        // Select final player (only from eligible ones)
+        // Select final player
         const finalIndex = Math.floor(Math.random() * eligiblePlayers.length);
         const selectedPlayerOriginalIndex = eligiblePlayers[finalIndex].originalIndex;
         setSelectedPlayer(selectedPlayerOriginalIndex);
@@ -67,14 +67,14 @@ export function StartingPlayerSelection({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {players.map((player, index) => (
+              {eligiblePlayers.map(({ player, originalIndex }, eligibleIndex) => (
                 <div
                   key={player.id}
                   className={cn(
                     "relative p-4 rounded-lg border-2 transition-all duration-200",
                     `player-card-${player.colorIndex}`,
-                    isAnimating && currentHighlight === index && "ring-4 ring-primary scale-105",
-                    selectedPlayer === index && "ring-4 ring-accent scale-110 shadow-victory"
+                    isAnimating && currentHighlight === eligibleIndex && "ring-4 ring-primary scale-105",
+                    selectedPlayer === originalIndex && "ring-4 ring-accent scale-110 shadow-victory"
                   )}
                 >
                   <div className="flex flex-col items-center space-y-2">
@@ -96,7 +96,7 @@ export function StartingPlayerSelection({
                     </div>
                   </div>
                   
-                  {selectedPlayer === index && (
+                  {selectedPlayer === originalIndex && (
                     <div className="absolute -top-2 -right-2 bg-accent text-accent-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
                       👉
                     </div>
