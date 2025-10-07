@@ -21,21 +21,21 @@ export function useGame() {
       minPlayers: 3,
       maxPlayers: 12,
       undercoverCount: 1,
-      hasMisterWhite: true,
+      misterWhiteCount: 1,
     },
   });
 
   const startGame = useCallback((
     playerConfigs: Array<{ name: string, profileImage?: string }>, 
     undercoverCount: number, 
-    hasMisterWhite: boolean
+    misterWhiteCount: number
   ) => {
     try {
       const usedWordPairs = getUsedWordPairs();
       const { players, wordPair } = createPlayersWithRoles(
         playerConfigs, 
         undercoverCount, 
-        hasMisterWhite, 
+        misterWhiteCount, 
         usedWordPairs
       );
 
@@ -50,7 +50,7 @@ export function useGame() {
           minPlayers: 3,
           maxPlayers: 12,
           undercoverCount,
-          hasMisterWhite,
+          misterWhiteCount,
         },
       });
     } catch (error) {
@@ -217,7 +217,7 @@ export function useGame() {
       const { players, wordPair } = createPlayersWithRoles(
         playerConfigs,
         prev.gameSettings.undercoverCount,
-        prev.gameSettings.hasMisterWhite,
+        prev.gameSettings.misterWhiteCount,
         usedWordPairs
       );
 
@@ -254,7 +254,7 @@ export function useGame() {
       const { players, wordPair } = createPlayersWithRoles(
         playerConfigs,
         prev.gameSettings.undercoverCount,
-        prev.gameSettings.hasMisterWhite,
+        prev.gameSettings.misterWhiteCount,
         usedWordPairs
       );
 
@@ -306,7 +306,7 @@ export function useGame() {
   const updateGameSettings = useCallback((
     playerConfigs: Array<{ name: string, profileImage?: string }>, 
     undercoverCount: number, 
-    hasMisterWhite: boolean
+    misterWhiteCount: number
   ) => {
     setGameState(prev => {
       // Create a mapping of existing players by name
@@ -346,7 +346,7 @@ export function useGame() {
         gameSettings: {
           ...prev.gameSettings,
           undercoverCount,
-          hasMisterWhite,
+          misterWhiteCount,
         },
       };
     });
@@ -364,7 +364,7 @@ export function useGame() {
         minPlayers: 3,
         maxPlayers: 12,
         undercoverCount: 1,
-        hasMisterWhite: true,
+        misterWhiteCount: 1,
       },
     });
   }, []);

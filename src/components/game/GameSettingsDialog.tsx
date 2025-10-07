@@ -16,8 +16,8 @@ interface GameSettingsDialogProps {
   onOpenChange: (open: boolean) => void;
   currentPlayers: Player[];
   currentUndercoverCount: number;
-  currentHasMisterWhite: boolean;
-  onSave: (playerConfigs: PlayerConfig[], undercoverCount: number, hasMisterWhite: boolean) => void;
+  currentMisterWhiteCount: number;
+  onSave: (playerConfigs: PlayerConfig[], undercoverCount: number, misterWhiteCount: number) => void;
 }
 
 export function GameSettingsDialog({ 
@@ -25,12 +25,12 @@ export function GameSettingsDialog({
   onOpenChange, 
   currentPlayers,
   currentUndercoverCount,
-  currentHasMisterWhite,
+  currentMisterWhiteCount,
   onSave 
 }: GameSettingsDialogProps) {
   const [playerConfigs, setPlayerConfigs] = useState<PlayerConfig[]>([]);
   const [undercoverCount, setUndercoverCount] = useState(currentUndercoverCount);
-  const [hasMisterWhite, setHasMisterWhite] = useState(currentHasMisterWhite);
+  const [misterWhiteCount, setMisterWhiteCount] = useState(currentMisterWhiteCount);
   const [editingPlayer, setEditingPlayer] = useState<PlayerConfig | undefined>();
   const [showPlayerDialog, setShowPlayerDialog] = useState(false);
 
@@ -44,9 +44,9 @@ export function GameSettingsDialog({
       }));
       setPlayerConfigs(configs);
       setUndercoverCount(currentUndercoverCount);
-      setHasMisterWhite(currentHasMisterWhite);
+      setMisterWhiteCount(currentMisterWhiteCount);
     }
-  }, [open, currentPlayers, currentUndercoverCount, currentHasMisterWhite]);
+  }, [open, currentPlayers, currentUndercoverCount, currentMisterWhiteCount]);
 
   const addPlayer = () => {
     if (playerConfigs.length < 12) {
@@ -74,18 +74,24 @@ export function GameSettingsDialog({
 
   const getMaxUndercovers = () => {
     if (playerConfigs.length < 3) return 1;
-    const maxPossible = hasMisterWhite ? playerConfigs.length - 2 : playerConfigs.length - 1;
-    return Math.max(1, maxPossible);
+    const maxPossible = playerConfigs.length - 1 - misterWhiteCount;
+    return Math.max(0, maxPossible);
+  };
+
+  const getMaxMisterWhites = () => {
+    if (playerConfigs.length < 3) return 1;
+    const maxPossible = playerConfigs.length - 1 - undercoverCount;
+    return Math.max(0, maxPossible);
   };
 
   const canSaveSettings = () => {
-    const validation = validateGameConfig(playerConfigs.length, undercoverCount, hasMisterWhite);
+    const validation = validateGameConfig(playerConfigs.length, undercoverCount, misterWhiteCount);
     return validation.isValid;
   };
 
   const handleSave = () => {
     if (canSaveSettings()) {
-      onSave(playerConfigs, undercoverCount, hasMisterWhite);
+      onSave(playerConfigs, undercoverCount, misterWhiteCount);
       onOpenChange(false);
     }
   };
@@ -179,7 +185,7 @@ export function GameSettingsDialog({
                 <div className="space-y-2">
                   <Label>Nombre d'Undercovers : {undercoverCount}</Label>
                   <div className="flex gap-2 flex-wrap">
-                    {Array.from({ length: getMaxUndercovers() }, (_, i) => i + 1).map(num => (
+                    {Array.from({ length: getMaxUndercovers() + 1 }, (_, i) => i).map(num => (
                       <Button
                         key={num}
                         variant={undercoverCount === num ? "undercover" : "outline"}
@@ -192,13 +198,21 @@ export function GameSettingsDialog({
                   </div>
                 </div>
 
-                {/* Mister White Toggle */}
-                <div className="flex items-center justify-between">
-                  <Label>Inclure Mister White</Label>
-                  <Switch
-                    checked={hasMisterWhite}
-                    onCheckedChange={setHasMisterWhite}
-                  />
+                {/* Mister White Count */}
+                <div className="space-y-2">
+                  <Label>Nombre de Mister White : {misterWhiteCount}</Label>
+                  <div className="flex gap-2 flex-wrap">
+                    {Array.from({ length: getMaxMisterWhites() + 1 }, (_, i) => i).map(num => (
+                      <Button
+                        key={num}
+                        variant={misterWhiteCount === num ? "mister-white" : "outline"}
+                        size="sm"
+                        onClick={() => setMisterWhiteCount(num)}
+                      >
+                        {num}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -208,8 +222,8 @@ export function GameSettingsDialog({
               <div className="bg-muted/30 rounded-lg p-4 space-y-2">
                 <div className="font-semibold text-center">Résumé de la partie</div>
                 {(() => {
-                  const civilCount = playerConfigs.length - undercoverCount - (hasMisterWhite ? 1 : 0);
-                  const validation = validateGameConfig(playerConfigs.length, undercoverCount, hasMisterWhite);
+                  const civilCount = playerConfigs.length - undercoverCount - misterWhiteCount;
+                  const validation = validateGameConfig(playerConfigs.length, undercoverCount, misterWhiteCount);
                   
                   return (
                     <>
@@ -228,7 +242,7 @@ export function GameSettingsDialog({
                           <div>Undercover</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-mister-white font-semibold">{hasMisterWhite ? 1 : 0}</div>
+                          <div className="text-mister-white font-semibold">{misterWhiteCount}</div>
                           <div>Mister White</div>
                         </div>
                       </div>

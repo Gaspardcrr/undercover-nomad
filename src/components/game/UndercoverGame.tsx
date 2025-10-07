@@ -36,8 +36,8 @@ export function UndercoverGame() {
   const [showAmnesicDialog, setShowAmnesicDialog] = useState(false);
   const [showGameSettings, setShowGameSettings] = useState(false);
 
-  const handleStartGame = (playerConfigs: PlayerConfig[], undercoverCount: number, hasMisterWhite: boolean) => {
-    startGame(playerConfigs, undercoverCount, hasMisterWhite);
+  const handleStartGame = (playerConfigs: PlayerConfig[], undercoverCount: number, misterWhiteCount: number) => {
+    startGame(playerConfigs, undercoverCount, misterWhiteCount);
   };
 
   const handlePlayerCardClick = (player: Player) => {
@@ -119,9 +119,9 @@ export function UndercoverGame() {
   const handleGameSettingsSave = (
     playerConfigs: PlayerConfig[], 
     undercoverCount: number, 
-    hasMisterWhite: boolean
+    misterWhiteCount: number
   ) => {
-    updateGameSettings(playerConfigs, undercoverCount, hasMisterWhite);
+    updateGameSettings(playerConfigs, undercoverCount, misterWhiteCount);
     toast.success('Paramètres enregistrés ! Ils seront appliqués à la prochaine manche.', {
       duration: 3000,
       style: {
@@ -244,7 +244,7 @@ export function UndercoverGame() {
         onOpenChange={setShowGameSettings}
         currentPlayers={gameState.players}
         currentUndercoverCount={gameState.gameSettings.undercoverCount}
-        currentHasMisterWhite={gameState.gameSettings.hasMisterWhite}
+        currentMisterWhiteCount={gameState.gameSettings.misterWhiteCount}
         onSave={handleGameSettingsSave}
       />
     </div>

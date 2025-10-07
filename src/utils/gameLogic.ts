@@ -19,7 +19,7 @@ export function shuffleArray<T>(array: T[]): T[] {
 export function validateGameConfig(
   playerCount: number,
   undercoverCount: number,
-  hasMisterWhite: boolean
+  misterWhiteCount: number
 ): { isValid: boolean, error?: string } {
   // Minimum 3 players required
   if (playerCount < 3) {
@@ -27,12 +27,12 @@ export function validateGameConfig(
   }
 
   // At least 1 Undercover OR Mister White required
-  if (undercoverCount < 1 && !hasMisterWhite) {
+  if (undercoverCount < 1 && misterWhiteCount < 1) {
     return { isValid: false, error: "Au moins 1 Undercover ou Mister White est requis" };
   }
 
   // At least 1 civilian required
-  const nonCivilCount = undercoverCount + (hasMisterWhite ? 1 : 0);
+  const nonCivilCount = undercoverCount + misterWhiteCount;
   if (nonCivilCount >= playerCount) {
     return { isValid: false, error: "Au moins 1 Civil est requis" };
   }
@@ -44,7 +44,7 @@ export function validateGameConfig(
 export function generatePlayerRoles(
   playerCount: number,
   undercoverCount: number,
-  hasMisterWhite: boolean
+  misterWhiteCount: number
 ): Role[] {
   const roles: Role[] = [];
   
@@ -53,8 +53,8 @@ export function generatePlayerRoles(
     roles.push('undercover');
   }
   
-  // Add Mister White if enabled
-  if (hasMisterWhite) {
+  // Add Mister White players
+  for (let i = 0; i < misterWhiteCount; i++) {
     roles.push('mister-white');
   }
   
@@ -72,11 +72,11 @@ export function generatePlayerRoles(
 export function createPlayersWithRoles(
   playerConfigs: Array<{ name: string, profileImage?: string }>,
   undercoverCount: number,
-  hasMisterWhite: boolean,
+  misterWhiteCount: number,
   usedWordPairs: WordPair[] = []
 ): { players: Player[], wordPair: WordPair } {
   const wordPair = getRandomWordPair(usedWordPairs);
-  const roles = generatePlayerRoles(playerConfigs.length, undercoverCount, hasMisterWhite);
+  const roles = generatePlayerRoles(playerConfigs.length, undercoverCount, misterWhiteCount);
   
   const players: Player[] = playerConfigs.map((config, index) => ({
     id: `player-${index}`,
