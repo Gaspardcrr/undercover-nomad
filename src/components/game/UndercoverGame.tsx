@@ -5,6 +5,7 @@ import { VictoryScreen } from './VictoryScreen';
 import { MisterWhiteGuess } from './MisterWhiteGuess';
 import { StartingPlayerSelection } from './StartingPlayerSelection';
 import { AmnesicModeDialog } from './AmnesicModeDialog';
+import { GameSettingsDialog } from './GameSettingsDialog';
 import { useGame } from '@/hooks/useGame';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,6 +25,7 @@ export function UndercoverGame() {
     skipRound,
     startNewRound,
     enableAmnesicMode,
+    updateGameSettings,
     resetGame,
   } = useGame();
 
@@ -32,6 +34,7 @@ export function UndercoverGame() {
   const [misterWhitePlayer, setMisterWhitePlayer] = useState<Player | null>(null);
   const [amnesicPlayer, setAmnesicPlayer] = useState<Player | null>(null);
   const [showAmnesicDialog, setShowAmnesicDialog] = useState(false);
+  const [showGameSettings, setShowGameSettings] = useState(false);
 
   const handleStartGame = (playerConfigs: PlayerConfig[], undercoverCount: number, hasMisterWhite: boolean) => {
     startGame(playerConfigs, undercoverCount, hasMisterWhite);
@@ -111,6 +114,21 @@ export function UndercoverGame() {
     if (confirmed) {
       resetGame();
     }
+  };
+
+  const handleGameSettingsSave = (
+    playerConfigs: PlayerConfig[], 
+    undercoverCount: number, 
+    hasMisterWhite: boolean
+  ) => {
+    updateGameSettings(playerConfigs, undercoverCount, hasMisterWhite);
+    toast.success('Paramètres enregistrés ! Ils seront appliqués à la prochaine manche.', {
+      duration: 3000,
+      style: {
+        background: '#10b981',
+        color: 'white',
+      }
+    });
   };
 
   const renderGameContent = () => {
@@ -198,6 +216,7 @@ export function UndercoverGame() {
             gameState={gameState}
             onNewRound={startNewRound}
             onBackToMenu={resetGame}
+            onOpenSettings={() => setShowGameSettings(true)}
           />
         );
 
@@ -218,6 +237,15 @@ export function UndercoverGame() {
         open={showAmnesicDialog}
         onOpenChange={setShowAmnesicDialog}
         onConfirm={handleAmnesicConfirm}
+      />
+
+      <GameSettingsDialog
+        open={showGameSettings}
+        onOpenChange={setShowGameSettings}
+        currentPlayers={gameState.players}
+        currentUndercoverCount={gameState.gameSettings.undercoverCount}
+        currentHasMisterWhite={gameState.gameSettings.hasMisterWhite}
+        onSave={handleGameSettingsSave}
       />
     </div>
   );

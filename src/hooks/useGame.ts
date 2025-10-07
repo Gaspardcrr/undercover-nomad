@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { GameState, Player, WordPair } from '@/types/game';
-import { 
+import type { GameState, Player, WordPair, Role } from '@/types/game';
+import {
   createPlayersWithRoles, 
   checkWinCondition, 
   updateScores, 
@@ -303,6 +303,55 @@ export function useGame() {
     });
   }, []);
 
+  const updateGameSettings = useCallback((
+    playerConfigs: Array<{ name: string, profileImage?: string }>, 
+    undercoverCount: number, 
+    hasMisterWhite: boolean
+  ) => {
+    setGameState(prev => {
+      // Create a mapping of existing players by name
+      const existingPlayersByName = new Map(
+        prev.players.map(p => [p.name, p])
+      );
+
+      // Update existing players and add new ones
+      const updatedPlayers: Player[] = playerConfigs.map((config, index) => {
+        const existingPlayer = existingPlayersByName.get(config.name);
+        
+        if (existingPlayer) {
+          // Update existing player
+          return {
+            ...existingPlayer,
+            name: config.name,
+            profileImage: config.profileImage,
+          };
+        } else {
+          // Add new player with default values
+          return {
+            id: `player-${Date.now()}-${index}`,
+            name: config.name,
+            profileImage: config.profileImage,
+            role: 'civil' as Role,
+            score: 0,
+            isEliminated: false,
+            hasSeenWord: false,
+            colorIndex: (index % 8) + 1,
+          };
+        }
+      });
+
+      return {
+        ...prev,
+        players: updatedPlayers,
+        gameSettings: {
+          ...prev.gameSettings,
+          undercoverCount,
+          hasMisterWhite,
+        },
+      };
+    });
+  }, []);
+
   const resetGame = useCallback(() => {
     setGameState({
       phase: 'setup',
@@ -330,6 +379,7 @@ export function useGame() {
     skipRound,
     startNewRound,
     enableAmnesicMode,
+    updateGameSettings,
     resetGame,
   };
 }

@@ -15,37 +15,29 @@ export function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-// Auto-adjust game configuration to respect rules
-export function autoAdjustGameConfig(
+// Validate game configuration
+export function validateGameConfig(
   playerCount: number,
-  requestedUndercoverCount: number,
+  undercoverCount: number,
   hasMisterWhite: boolean
-): { undercoverCount: number, hasMisterWhite: boolean } {
+): { isValid: boolean, error?: string } {
+  // Minimum 3 players required
   if (playerCount < 3) {
-    return { undercoverCount: 1, hasMisterWhite: false };
+    return { isValid: false, error: "Au moins 3 joueurs sont requis" };
   }
 
-  let finalUndercoverCount = requestedUndercoverCount;
-  let finalHasMisterWhite = hasMisterWhite;
-
-  // Rule: Always have at least "undercoverCount + 1" civilians
-  // This ensures civilians always outnumber undercovers
-  const minCivilsRequired = finalUndercoverCount + 1;
-  const maxNonCivils = playerCount - minCivilsRequired;
-  
-  // Calculate max undercovers based on whether Mister White is present
-  const maxUndercoverCount = hasMisterWhite ? 
-    Math.max(1, maxNonCivils - 1) : // Reserve 1 slot for Mister White
-    Math.max(1, maxNonCivils);      // No Mister White, all remaining can be undercover
-  
-  if (finalUndercoverCount > maxUndercoverCount) {
-    finalUndercoverCount = maxUndercoverCount;
+  // At least 1 Undercover OR Mister White required
+  if (undercoverCount < 1 && !hasMisterWhite) {
+    return { isValid: false, error: "Au moins 1 Undercover ou Mister White est requis" };
   }
 
-  return { 
-    undercoverCount: Math.max(1, finalUndercoverCount), 
-    hasMisterWhite: finalHasMisterWhite 
-  };
+  // At least 1 civilian required
+  const nonCivilCount = undercoverCount + (hasMisterWhite ? 1 : 0);
+  if (nonCivilCount >= playerCount) {
+    return { isValid: false, error: "Au moins 1 Civil est requis" };
+  }
+
+  return { isValid: true };
 }
 
 // Generate player roles based on game settings

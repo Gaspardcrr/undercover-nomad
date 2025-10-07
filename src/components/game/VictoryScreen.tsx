@@ -9,9 +9,10 @@ interface VictoryScreenProps {
   gameState: GameState;
   onNewRound: () => void;
   onBackToMenu: () => void;
+  onOpenSettings: () => void;
 }
 
-export function VictoryScreen({ gameState, onNewRound, onBackToMenu }: VictoryScreenProps) {
+export function VictoryScreen({ gameState, onNewRound, onBackToMenu, onOpenSettings }: VictoryScreenProps) {
   const [showConfetti, setShowConfetti] = useState(true);
   const { winner, winnerPlayers = [], players, civilianWord, undercoverWord } = gameState;
 
@@ -234,6 +235,15 @@ export function VictoryScreen({ gameState, onNewRound, onBackToMenu }: VictorySc
         >
           <RotateCcw className="w-5 h-5" />
           Nouvelle manche
+        </Button>
+        <Button
+          variant="outline"
+          size="xl"
+          onClick={onOpenSettings}
+          className="flex-1 sm:flex-none"
+        >
+          <Trophy className="w-5 h-5" />
+          Paramètres
         </Button>
         <Button
           variant="outline"

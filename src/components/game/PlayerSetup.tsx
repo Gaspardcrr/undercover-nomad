@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Trash2, Plus, Play, Edit } from 'lucide-react';
 import type { PlayerConfig } from '@/types/playerConfig';
-import { autoAdjustGameConfig } from '@/utils/gameLogic';
+import { validateGameConfig } from '@/utils/gameLogic';
 
 interface PlayerSetupProps {
   onStartGame: (playerConfigs: PlayerConfig[], undercoverCount: number, hasMisterWhite: boolean) => void;
@@ -36,13 +36,6 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
   const removePlayer = (playerId: string) => {
     const newConfigs = playerConfigs.filter(p => p.id !== playerId);
     setPlayerConfigs(newConfigs);
-    
-    // Auto-adjust game settings
-    if (newConfigs.length >= 3) {
-      const adjusted = autoAdjustGameConfig(newConfigs.length, undercoverCount, hasMisterWhite);
-      setUndercoverCount(adjusted.undercoverCount);
-      setHasMisterWhite(adjusted.hasMisterWhite);
-    }
   };
 
   const handleSavePlayer = (player: PlayerConfig) => {
@@ -53,33 +46,18 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
       // Add new player
       setPlayerConfigs(prev => [...prev, player]);
     }
-    
-    // Auto-adjust game settings after adding/editing
-    const newCount = editingPlayer ? playerConfigs.length : playerConfigs.length + 1;
-    if (newCount >= 3) {
-      const adjusted = autoAdjustGameConfig(newCount, undercoverCount, hasMisterWhite);
-      setUndercoverCount(adjusted.undercoverCount);
-      setHasMisterWhite(adjusted.hasMisterWhite);
-    }
   };
 
   const getMaxUndercovers = () => {
     if (playerConfigs.length < 3) return 1;
-    const adjusted = autoAdjustGameConfig(playerConfigs.length, 10, hasMisterWhite);
-    return adjusted.undercoverCount;
+    // Allow up to playerCount - 1 (must keep at least 1 civilian)
+    const maxPossible = hasMisterWhite ? playerConfigs.length - 2 : playerConfigs.length - 1;
+    return Math.max(1, maxPossible);
   };
 
   const canStartGame = () => {
-    if (playerConfigs.length < 3) return false;
-    
-    // Check if configuration respects the rules
-    const minCivilsRequired = hasMisterWhite ? 
-      Math.ceil(playerConfigs.length / 2) : 
-      Math.ceil(playerConfigs.length / 2) + 1;
-    const nonCivilCount = undercoverCount + (hasMisterWhite ? 1 : 0);
-    const actualCivils = playerConfigs.length - nonCivilCount;
-    
-    return actualCivils >= minCivilsRequired && undercoverCount >= 1;
+    const validation = validateGameConfig(playerConfigs.length, undercoverCount, hasMisterWhite);
+    return validation.isValid;
   };
 
   const handleStartGame = () => {
@@ -90,21 +68,10 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
 
   const handleUndercoverCountChange = (newCount: number) => {
     setUndercoverCount(newCount);
-    
-    // Auto-adjust if needed
-    const adjusted = autoAdjustGameConfig(playerConfigs.length, newCount, hasMisterWhite);
-    if (adjusted.undercoverCount !== newCount) {
-      setUndercoverCount(adjusted.undercoverCount);
-    }
   };
 
   const handleMisterWhiteToggle = (enabled: boolean) => {
     setHasMisterWhite(enabled);
-    
-    // Auto-adjust if needed
-    const adjusted = autoAdjustGameConfig(playerConfigs.length, undercoverCount, enabled);
-    setUndercoverCount(adjusted.undercoverCount);
-    setHasMisterWhite(adjusted.hasMisterWhite);
   };
 
   return (
@@ -224,10 +191,7 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
               <div className="font-semibold text-center">Résumé de la partie</div>
               {(() => {
                 const civilCount = playerConfigs.length - undercoverCount - (hasMisterWhite ? 1 : 0);
-                const minCivilsRequired = hasMisterWhite ? 
-                  Math.ceil(playerConfigs.length / 2) : 
-                  Math.ceil(playerConfigs.length / 2) + 1;
-                const isValidConfig = civilCount >= minCivilsRequired;
+                const validation = validateGameConfig(playerConfigs.length, undercoverCount, hasMisterWhite);
                 
                 return (
                   <>
@@ -235,7 +199,7 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
                       <div className="text-center">
                         <div className={cn(
                           "font-semibold",
-                          isValidConfig ? "text-civil" : "text-destructive"
+                          validation.isValid ? "text-civil" : "text-destructive"
                         )}>
                           {civilCount}
                         </div>
@@ -250,9 +214,9 @@ export function PlayerSetup({ onStartGame }: PlayerSetupProps) {
                         <div>Mister White</div>
                       </div>
                     </div>
-                    {!isValidConfig && (
+                    {!validation.isValid && (
                       <div className="text-destructive text-sm text-center">
-                        ⚠️ Configuration invalide : Au moins {minCivilsRequired} civils requis
+                        ⚠️ {validation.error}
                       </div>
                     )}
                   </>
